@@ -8,15 +8,27 @@ use thiserror::Error;
 pub enum MoneyMoneyError {
     /// MoneyMoney is running but its database is locked. The user must unlock
     /// the app GUI before any `export ...` verb will succeed.
+    #[cfg_attr(
+        not(target_os = "macos"),
+        allow(dead_code, reason = "only constructed by macOS stderr classifier")
+    )]
     #[error("MoneyMoney database is locked; unlock the app and try again")]
     DatabaseLocked,
 
     /// MoneyMoney is not currently running. AppleScript will auto-launch it in
     /// some cases, but the user may prefer an explicit hint.
+    #[cfg_attr(
+        not(target_os = "macos"),
+        allow(dead_code, reason = "only constructed by macOS stderr classifier")
+    )]
     #[error("MoneyMoney is not running")]
     NotRunning,
 
     /// MoneyMoney is not installed on this machine.
+    #[cfg_attr(
+        not(target_os = "macos"),
+        allow(dead_code, reason = "only constructed by macOS stderr classifier")
+    )]
     #[error("MoneyMoney is not installed")]
     NotInstalled,
 

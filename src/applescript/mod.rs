@@ -33,28 +33,27 @@ pub trait OsascriptRunner: Send + Sync {
 #[derive(Debug, Default, Clone, Copy)]
 pub struct TokioOsascriptRunner;
 
+#[cfg(target_os = "macos")]
 impl OsascriptRunner for TokioOsascriptRunner {
     async fn run(&self, script: &str) -> Result<Vec<u8>, MoneyMoneyError> {
-        #[cfg(not(target_os = "macos"))]
-        {
-            let _ = script;
-            return Err(MoneyMoneyError::NotSupported);
+        debug!(bytes = script.len(), "invoking osascript");
+        let output = Command::new("osascript")
+            .arg("-e")
+            .arg(script)
+            .output()
+            .await?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+            return Err(classify_stderr(&stderr));
         }
+        Ok(output.stdout)
+    }
+}
 
-        #[cfg(target_os = "macos")]
-        {
-            debug!(bytes = script.len(), "invoking osascript");
-            let output = Command::new("osascript")
-                .arg("-e")
-                .arg(script)
-                .output()
-                .await?;
-            if !output.status.success() {
-                let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
-                return Err(classify_stderr(&stderr));
-            }
-            Ok(output.stdout)
-        }
+#[cfg(not(target_os = "macos"))]
+impl OsascriptRunner for TokioOsascriptRunner {
+    async fn run(&self, _script: &str) -> Result<Vec<u8>, MoneyMoneyError> {
+        Err(MoneyMoneyError::NotSupported)
     }
 }
 
