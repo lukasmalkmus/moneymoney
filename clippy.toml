@@ -1,0 +1,12 @@
+doc-valid-idents = [
+    "MoneyMoney",
+    "AppleScript",
+    "IBAN",
+    "BIC",
+    "SEPA",
+    "PayPal",
+    "SQLCipher",
+    "IEEE-754",
+    "JSON-RPC",
+    "..",
+]

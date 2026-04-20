@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
+      - ".claude-plugin/**"
+      - "skills/**"
+      - "hooks/**"
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
+      - ".claude-plugin/**"
+      - "skills/**"
+      - "hooks/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --all-targets -- -D warnings
+
+  msrv:
+    name: MSRV
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.msrv.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Extract MSRV from Cargo.toml
+        id: msrv
+        run: |
+          MSRV=$(grep -m1 '^rust-version' Cargo.toml | sed 's/.*"\(.*\)"/\1/')
+          echo "version=$MSRV" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Test (${{ matrix.toolchain }}, ${{ matrix.os }})
+    needs: msrv
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - toolchain: stable
+            os: ubuntu-latest
+          - toolchain: ${{ needs.msrv.outputs.version }}
+            os: ubuntu-latest
+          - toolchain: stable
+            os: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --all
+
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: -D warnings
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo doc --no-deps --all

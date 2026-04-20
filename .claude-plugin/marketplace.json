@@ -1,0 +1,26 @@
+{
+  "name": "moneymoney",
+  "owner": {
+    "name": "Lukas Malkmus",
+    "email": "mail@lukasmalkmus.com"
+  },
+  "metadata": {
+    "title": "MoneyMoney CLI + MCP",
+    "description": "Agent-native access to MoneyMoney accounts, transactions, categories, portfolios, and bank statements via the `mm` CLI and an MCP server over stdio.",
+    "categories": ["finance", "productivity"],
+    "tags": ["moneymoney", "banking", "finance", "mcp", "cli"]
+  },
+  "plugins": [
+    {
+      "name": "moneymoney",
+      "source": "./",
+      "description": "Agent-native CLI and MCP server for MoneyMoney",
+      "version": "0.2.0",
+      "author": { "name": "Lukas Malkmus" },
+      "homepage": "https://github.com/lukasmalkmus/moneymoney",
+      "repository": "https://github.com/lukasmalkmus/moneymoney",
+      "license": "MIT",
+      "keywords": ["moneymoney", "banking", "finance", "mcp", "cli"]
+    }
+  ]
+}

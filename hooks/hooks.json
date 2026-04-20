@@ -1,0 +1,26 @@
+{
+  "description": "Skill nudge + binary-sync hooks for the moneymoney plugin",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/nudge-skill.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ensure-binary.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

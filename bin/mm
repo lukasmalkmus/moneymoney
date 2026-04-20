@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+#
+# Claude Code plugin shim for `mm`.
+#
+# Resolution order:
+#   1) Any user-installed `mm` already on PATH (cargo / brew / manual)
+#      wins. The shim's own directory is stripped from PATH before the
+#      lookup so we can't re-exec ourselves.
+#   2) A plugin-managed binary at ${CLAUDE_PLUGIN_DATA}/bin/mm whose
+#      recorded version matches .claude-plugin/plugin.json.
+#   3) Download the right release archive from GitHub into
+#      ${CLAUDE_PLUGIN_DATA}/bin, unpack, chmod +x, exec.
+#
+# On any failure the shim prints a clear install hint to stderr and
+# exits 127, mirroring "command not found" behaviour.
+
+set -euo pipefail
+
+self_dir="$(cd "$(dirname "$0")" && pwd)"
+plugin_root="${CLAUDE_PLUGIN_ROOT:-$(cd "$self_dir/.." && pwd)}"
+data_dir="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/moneymoney}"
+
+# --- 1) Prefer a user-installed mm -------------------------------------------
+
+clean_path="$(echo "$PATH" | tr ':' '\n' | grep -vFx "$self_dir" | tr '\n' ':')"
+if real_mm="$(PATH="$clean_path" command -v mm 2>/dev/null)"; then
+  exec "$real_mm" "$@"
+fi
+
+# --- 2) Re-use the plugin-managed download if versions match -----------------
+
+plugin_json="$plugin_root/.claude-plugin/plugin.json"
+if [[ ! -f "$plugin_json" ]]; then
+  echo "mm: plugin.json not found at $plugin_json" >&2
+  exit 127
+fi
+expected_version="$(jq -r '.version' "$plugin_json")"
+
+mkdir -p "$data_dir/bin"
+installed_binary="$data_dir/bin/mm"
+installed_version_file="$data_dir/bin/mm.version"
+
+if [[ -x "$installed_binary" ]] \
+   && [[ "$(cat "$installed_version_file" 2>/dev/null)" == "$expected_version" ]]; then
+  exec "$installed_binary" "$@"
+fi
+
+# --- 3) Download the right release asset ------------------------------------
+
+case "$(uname -s)/$(uname -m)" in
+  Darwin/arm64)   target="aarch64-apple-darwin" ;;
+  Darwin/x86_64)  target="x86_64-apple-darwin" ;;
+  Linux/x86_64)   target="x86_64-unknown-linux-gnu" ;;
+  Linux/aarch64)  target="aarch64-unknown-linux-gnu" ;;
+  *)
+    echo "mm: unsupported platform $(uname -s)/$(uname -m)" >&2
+    echo "  install manually: cargo install moneymoney --locked" >&2
+    exit 127
+    ;;
+esac
+
+archive="mm-${target}.tar.gz"
+url="https://github.com/lukasmalkmus/moneymoney/releases/download/v${expected_version}/${archive}"
+
+echo "mm: fetching ${archive} from ${url}" >&2
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+if ! curl -fsSL -o "$tmp/$archive" "$url"; then
+  cat >&2 <<EOF
+mm: failed to download ${url}
+  Install manually with:
+    cargo install moneymoney --locked
+  or:
+    brew install lukasmalkmus/tap/mm
+EOF
+  exit 127
+fi
+tar xzf "$tmp/$archive" -C "$tmp"
+
+# Extracted binary is either bare `mm` or inside a subdir.
+if [[ -x "$tmp/mm" ]]; then
+  mv "$tmp/mm" "$installed_binary"
+else
+  found="$(find "$tmp" -type f -name mm -perm -u+x | head -n 1)"
+  if [[ -z "$found" ]]; then
+    echo "mm: extracted archive did not contain an executable named 'mm'" >&2
+    exit 127
+  fi
+  mv "$found" "$installed_binary"
+fi
+chmod +x "$installed_binary"
+echo "$expected_version" > "$installed_version_file"
+
+# macOS Gatekeeper: strip the quarantine attribute on the fresh binary so
+# users don't hit "cannot be opened because the developer cannot be
+# verified". Best-effort; silently skip if xattr isn't available.
+if command -v xattr >/dev/null 2>&1; then
+  xattr -d com.apple.quarantine "$installed_binary" 2>/dev/null || true
+fi
+
+exec "$installed_binary" "$@"
