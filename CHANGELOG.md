@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-20
+
+### Added
+
+- `iban` field on account output (table column, JSON key, `-F iban`
+  filter). Populated for SEPA accounts whose `account_number` passes
+  mod-97; absent for PayPal and legacy numbers.
+- Skill decision tree and frontmatter now cover write intents:
+  "Überweisung", "Lastschrift", "SEPA", "transfer", "direct debit",
+  "send money", "pay this invoice". The skill triggers on those
+  phrases and walks through drafting `mm transfer create` with the
+  permission prompt + GUI/TAN as the safety gates.
+
+### Changed
+
+- Skill body reorganized: a prominent "Actions (Permission-Prompted)"
+  section moves ahead of statement handling, with worked examples for
+  paying an invoice PDF and queueing into MoneyMoney's Ausgangskorb.
+- "Write Subcommands" tail section removed (content moved up).
+
 ## [0.2.0] - 2026-04-20
 
 ### Added

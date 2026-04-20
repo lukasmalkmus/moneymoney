@@ -15,7 +15,7 @@
       "name": "moneymoney",
       "source": "./",
       "description": "Agent-native CLI and MCP server for MoneyMoney",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "author": { "name": "Lukas Malkmus" },
       "homepage": "https://github.com/lukasmalkmus/moneymoney",
       "repository": "https://github.com/lukasmalkmus/moneymoney",

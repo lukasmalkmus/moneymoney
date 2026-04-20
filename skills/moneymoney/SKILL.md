@@ -1,10 +1,14 @@
 ---
 name: moneymoney
 description: |
-  Query MoneyMoney accounts, transactions, categories, portfolio, and bank
-  statements. Use when asked about personal finance, bank balances, recent
-  transactions, spending by category, portfolio holdings, or bank statements
-  from MoneyMoney.
+  Query and act on MoneyMoney data via the `mm` CLI: accounts, transactions,
+  categories, portfolio, bank statement PDFs; plus drafting SEPA transfers,
+  direct debits, batch transfers, and offline-account entries through
+  MoneyMoney's GUI+TAN flow. Use whenever the user asks about personal
+  finance, bank balances, recent transactions, spending, portfolio holdings,
+  bank statements, OR wants to make/draft a payment — "Überweisung",
+  "überweisen", "Lastschrift", "SEPA", "transfer", "direct debit", "send
+  money", "pay this invoice", "zahle diese Rechnung".
 user-invocable: true
 argument-hint: <question-or-query>
 allowed-tools: Bash(mm status), Bash(mm accounts *), Bash(mm transactions *), Bash(mm categories *), Bash(mm portfolio *), Bash(mm statements *), Bash(mm version), Bash(mm mcp *), Read
@@ -34,9 +38,65 @@ User wants…
   │     └── Filtered ────────── mm transactions --account <REF> --search "Supermarket"
   ├── Category tree ──────────── mm categories
   ├── Portfolio holdings ─────── mm portfolio --account <DEPOT-REF>
-  └── Bank statement PDFs ────── mm statements list [--account <REF>] [--since YYYY-MM-DD]
-        └── Retrieve a PDF ───── mm statements get <FILENAME>
+  ├── Bank statement PDFs ────── mm statements list [--account <REF>] [--since YYYY-MM-DD]
+  │     └── Retrieve a PDF ──── mm statements get <FILENAME>
+  ├── Send money / pay invoice ─ mm transfer create --from <REF> --to <IBAN> --amount X.XX --purpose "..."
+  │     └── Hold for later ──── add --into-outbox (lands in Ausgangskorb)
+  ├── Direct debit ───────────── mm transfer direct-debit --from <REF> --to <IBAN> --amount X.XX --mandate <MANDATE-ID>
+  ├── SEPA XML batch ─────────── mm transfer batch <file.xml>
+  ├── Add offline entry ──────── mm transaction add --account <OFFLINE-REF> --amount X.XX --purpose "..."
+  └── Edit transaction meta ─── mm transaction set <UUID> [--checkmark] [--category "..."] [--comment "..."]
 ```
+
+## Actions (Permission-Prompted)
+
+**These ARE available.** `mm transfer *` and `mm transaction *` are
+intentionally not in `allowed-tools` — Claude Code prompts for your
+approval on every call. SEPA transfers additionally require
+confirmation and TAN entry inside MoneyMoney's own window, so money
+never moves without two explicit human gates.
+
+If the user says "Überweisung", "überweisen", "Lastschrift", "SEPA",
+"transfer", "send money", or "pay this invoice", do **not** reply "I
+have no tools for that." Draft the command, confirm the parameters
+with the user, and run it. The permission prompt is the safety net.
+
+### Worked example — pay an invoice PDF
+
+```
+1. Read the PDF → extract recipient name, IBAN, amount, purpose /
+   reference number.
+2. Echo the parsed fields back to the user and get a "go ahead".
+3. Pick a source account (usually the main Girokonto unless the
+   user says otherwise).
+4. mm transfer create \
+     --from "ING/Girokonto" \
+     --to   "DE17500400000076139950" \
+     --name "Anke Irma Johannmeier" \
+     --amount 701.74 \
+     --purpose "Rechnung 80500-01-2026"
+5. MoneyMoney opens a pre-filled payment window. User reviews,
+   enters TAN, and releases the transfer.
+```
+
+### Worked example — queue for later (`--into-outbox`)
+
+```
+mm transfer create --from "ING/Girokonto" --to "DE..." \
+  --amount 50.00 --purpose "Rent April" --into-outbox
+```
+
+The payment lands in MoneyMoney's Ausgangskorb and stays there until
+the user releases it manually (useful for collecting several and
+releasing them as a batch).
+
+### Silent mutators — warn before running
+
+`mm transaction set` overwrites `--comment` and `--category` without
+prompting a second time and without an undo. Before calling it,
+confirm the target transaction UUID and the new value(s) with the
+user. `--checkmark` is reversible (just run `set` again with the
+opposite value).
 
 ## Bank Statements — Always Examine PDF Content
 
@@ -107,8 +167,9 @@ mm accounts get "Trade Republic/Girokonto"
 ## Output Formats
 
 Defaults to **table** in terminal, **JSON** when piped (for agents). Override
-with `--output json|ndjson|table`. Use `-F name,account,balance` to filter
-fields.
+with `--output json|ndjson|table`. Use `-F name,iban,balance` to filter
+fields. For SEPA accounts `iban` is the normalized IBAN; for PayPal /
+legacy accounts it's absent.
 
 ## JSON Envelope
 
@@ -121,13 +182,6 @@ Lists return:
 Individual records (from `mm accounts get`) return the record object
 directly.
 
-## Write Subcommands
-
-`mm transfer *` and `mm transaction *` exist but are **deliberately omitted
-from `allowed-tools`**. Using them prompts the user for permission. All
-transfers go through MoneyMoney's GUI + TAN intercept, so nothing leaves
-the bank without explicit user interaction.
-
 ## Common Pitfalls
 
 | Wrong | Right | Why |
@@ -137,6 +191,7 @@ the bank without explicit user interaction.
 | Running commands while app is locked | `mm status` first, then retry | Database access fails silently otherwise |
 | Searching transactions without a date range | Always pass `--from` / `--to` | Default range is last 90 days |
 | Answering a statement question from filenames alone | `mm statements get` + `Read` the PDF | Statements are PDFs — their content is the answer |
+| "I can't make transfers — I have no tools for that" | Use `mm transfer create`; Claude Code prompts for approval, MoneyMoney's GUI+TAN is the real gate | Write verbs exist; they are only kept out of `allowed-tools` so every call requires explicit approval |
 
 ## Exit Codes
 

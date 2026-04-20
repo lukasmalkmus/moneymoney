@@ -182,8 +182,12 @@ mod tests {
     use crate::moneymoney::types::{Account, BalanceEntry};
 
     fn row(bank: &str, name: &str, uuid: &str, account_number: &str, group: bool) -> AccountRow {
+        let iban = BaseIban::from_str(account_number)
+            .ok()
+            .map(|b| b.electronic_str().to_owned());
         AccountRow {
             bank: bank.to_owned(),
+            iban,
             account: Account {
                 uuid: uuid.to_owned(),
                 name: name.to_owned(),

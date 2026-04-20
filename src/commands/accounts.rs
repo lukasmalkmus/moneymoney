@@ -1,7 +1,9 @@
 //! `mm accounts` — list and inspect MoneyMoney accounts.
 
 use std::collections::HashMap;
+use std::str::FromStr;
 
+use iban::{BaseIban, IbanLike};
 use serde::Serialize;
 
 use crate::applescript::{OsascriptRunner, run_plist};
@@ -26,13 +28,19 @@ pub struct AccountRow {
     /// Bank the account belongs to: the parent group's name, or the account's
     /// own name when it's top-level and standalone (e.g., PayPal).
     pub bank: String,
+    /// Normalized IBAN when [`Account::account_number`] parses as one.
+    /// `None` for PayPal, legacy number accounts, or anything else that
+    /// doesn't pass mod-97.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub iban: Option<String>,
     /// The underlying account row.
     #[serde(flatten)]
     pub account: Account,
 }
 
 /// Walk the flat account list and annotate each row with its parent bank
-/// name, derived from the preceding `indentation == 0` entry.
+/// name, derived from the preceding `indentation == 0` entry. Also derives
+/// the normalized IBAN when `account_number` parses as one.
 pub fn annotate_with_bank(accounts: Vec<Account>) -> Vec<AccountRow> {
     let mut current_bank: Option<String> = None;
     accounts
@@ -44,14 +52,21 @@ pub fn annotate_with_bank(accounts: Vec<Account>) -> Vec<AccountRow> {
             } else {
                 current_bank.clone().unwrap_or_default()
             };
-            AccountRow { bank, account }
+            let iban = BaseIban::from_str(&account.account_number)
+                .ok()
+                .map(|b| b.electronic_str().to_owned());
+            AccountRow {
+                bank,
+                iban,
+                account,
+            }
         })
         .collect()
 }
 
 impl Tabular for AccountRow {
     fn headers() -> &'static [&'static str] {
-        &["Bank", "Name", "Account", "Balance", "Currency"]
+        &["Bank", "Name", "Account", "IBAN", "Balance", "Currency"]
     }
 
     fn row(&self) -> Vec<String> {
@@ -65,6 +80,7 @@ impl Tabular for AccountRow {
             self.bank.clone(),
             self.account.name.clone(),
             self.account.account_number.clone(),
+            self.iban.clone().unwrap_or_default(),
             balance,
             self.account.currency.clone(),
         ]
@@ -97,6 +113,7 @@ impl DetailView for AccountRow {
             ("UUID", uuid.clone()),
             ("Owner", owner.clone()),
             ("Account", account_number.clone()),
+            ("IBAN", self.iban.clone().unwrap_or_default()),
             ("BIC", bank_code.clone()),
             ("Type", account_type.clone()),
             ("Currency", currency.clone()),
@@ -116,6 +133,7 @@ impl FieldNames for AccountRow {
             "uuid",
             "owner",
             "account",
+            "iban",
             "bic",
             "type",
             "currency",
@@ -195,4 +213,68 @@ pub async fn run_get<R: OsascriptRunner>(runner: &R, opts: GetOptions) -> anyhow
         .transpose()?;
 
     format_detail(row, format, filter.as_ref())
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    reason = "tests assert on well-known fixture input"
+)]
+mod tests {
+    use rust_decimal::Decimal;
+
+    use super::*;
+    use crate::moneymoney::types::BalanceEntry;
+
+    fn account(name: &str, account_number: &str, indentation: u32) -> Account {
+        Account {
+            uuid: format!("uuid-{name}"),
+            name: name.to_owned(),
+            owner: String::new(),
+            account_number: account_number.to_owned(),
+            bank_code: String::new(),
+            currency: "EUR".to_owned(),
+            group: false,
+            portfolio: false,
+            indentation,
+            account_type: "Giro account".to_owned(),
+            balance: vec![BalanceEntry {
+                amount: Decimal::ZERO,
+                currency: "EUR".to_owned(),
+            }],
+        }
+    }
+
+    #[test]
+    fn iban_derived_for_sepa_account() {
+        let rows = annotate_with_bank(vec![
+            account("ING", "", 0),
+            account("Girokonto", "DE89370400440532013000", 1),
+        ]);
+        let leaf = rows.iter().find(|r| r.account.name == "Girokonto").unwrap();
+        assert_eq!(leaf.iban.as_deref(), Some("DE89370400440532013000"));
+    }
+
+    #[test]
+    fn iban_normalized_from_spaced_input() {
+        let rows = annotate_with_bank(vec![account("Girokonto", "DE89 3704 0044 0532 0130 00", 0)]);
+        assert_eq!(rows[0].iban.as_deref(), Some("DE89370400440532013000"));
+    }
+
+    #[test]
+    fn iban_none_for_paypal_email() {
+        let rows = annotate_with_bank(vec![account("PayPal", "user@example.com", 0)]);
+        assert!(rows[0].iban.is_none());
+    }
+
+    #[test]
+    fn iban_none_for_legacy_number() {
+        let rows = annotate_with_bank(vec![account("Legacy", "123456789", 0)]);
+        assert!(rows[0].iban.is_none());
+    }
+
+    #[test]
+    fn iban_field_is_valid_filter_name() {
+        assert!(AccountRow::valid_fields().contains(&"iban"));
+    }
 }

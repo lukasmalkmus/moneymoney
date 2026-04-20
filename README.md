@@ -43,7 +43,9 @@ mm statements list --since 2026-01-01
 ```
 
 Output defaults to **table** in a TTY and **JSON** when piped. Override
-with `-o json|ndjson|table`. Filter fields with `-F bank,name,balance`.
+with `-o json|ndjson|table`. Filter fields with `-F bank,name,iban,balance`.
+For SEPA accounts, `iban` is the normalized (no-whitespace, mod-97-verified)
+IBAN; for PayPal or legacy accounts the field is absent.
 
 ## Writing
 
