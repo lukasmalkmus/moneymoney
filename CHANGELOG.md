@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-21
+
+### Fixed
+
+- Plugin shim `bin/mm` and SessionStart hook `hooks/ensure-binary.sh`
+  now fall back to a pure-bash `sed` extractor when `jq` is not on
+  PATH, so the first `mm` invocation no longer fails on stock macOS,
+  Alpine, and slim Linux containers.
+
 ## [0.4.0] - 2026-04-20
 
 ### Fixed

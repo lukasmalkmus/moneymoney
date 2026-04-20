@@ -34,7 +34,22 @@ if [[ ! -f "$plugin_json" ]]; then
   echo "mm: plugin.json not found at $plugin_json" >&2
   exit 127
 fi
-expected_version="$(jq -r '.version' "$plugin_json")"
+
+# Read .version from plugin.json. Prefer jq when available; fall back to a
+# pure-bash sed extractor so the shim works on machines without jq.
+if command -v jq >/dev/null 2>&1; then
+  expected_version="$(jq -r '.version // empty' "$plugin_json" 2>/dev/null || true)"
+else
+  expected_version="$(
+    sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' \
+      "$plugin_json" | head -n1
+  )"
+fi
+
+if [[ -z "$expected_version" ]]; then
+  echo "mm: could not read version from $plugin_json" >&2
+  exit 127
+fi
 
 mkdir -p "$data_dir/bin"
 installed_binary="$data_dir/bin/mm"

@@ -29,8 +29,17 @@ if PATH="$clean_path" command -v mm >/dev/null 2>&1; then
   exit 0
 fi
 
-expected_version="$(jq -r '.version' "$plugin_json" 2>/dev/null || true)"
-[[ -z "$expected_version" || "$expected_version" == "null" ]] && exit 0
+# Read .version from plugin.json. Prefer jq when available; fall back to a
+# pure-bash sed extractor so the hook works on machines without jq.
+if command -v jq >/dev/null 2>&1; then
+  expected_version="$(jq -r '.version // empty' "$plugin_json" 2>/dev/null || true)"
+else
+  expected_version="$(
+    sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' \
+      "$plugin_json" | head -n1
+  )"
+fi
+[[ -z "$expected_version" ]] && exit 0
 
 installed_version_file="$data_dir/bin/mm.version"
 installed_version="$(cat "$installed_version_file" 2>/dev/null || echo "")"
