@@ -83,20 +83,10 @@ pub fn run_list(opts: &ListOptions) -> anyhow::Result<()> {
     let root = statements::default_root();
     let mut items = statements::walk(&root)?;
 
-    // Filter by account. Accepts either an account number / IBAN (matched
-    // against the digit hint embedded in the filename) or a bank folder
-    // name (ING, Trade Republic, …) matched against the bank subdirectory.
+    // Filter by account. See [`statements::matches_account`] for the
+    // accepted forms (Bank/Name path, IBAN, digit suffix, bare bank).
     if let Some(account) = &opts.account {
-        let needle = account.trim();
-        let needle_lower = needle.to_lowercase();
-        items.retain(|s| {
-            let by_hint = s
-                .account_hint
-                .as_ref()
-                .is_some_and(|hint| needle.ends_with(hint.as_str()) || hint.contains(needle));
-            let by_bank = s.bank.to_lowercase().contains(&needle_lower);
-            by_hint || by_bank
-        });
+        items.retain(|s| statements::matches_account(s, account));
     }
 
     if let Some(since) = opts.since {

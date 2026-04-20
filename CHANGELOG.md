@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-20
+
+### Fixed
+
+- `mm statements list --account "Bank/Name"` (e.g.
+  `"ING/Girokonto"`) now matches. Previously the filter only
+  accepted bare bank names or account-number digits; the
+  `Bank/Name` form — the one the skill recommends — silently
+  returned zero results because the needle didn't match either
+  the bank folder or the filename's digit hint.
+- IBAN-form account refs (`DE…5437633269`) are now recognized by
+  the statements filter via trailing-digit matching against the
+  filename's `account_hint`.
+
+### Changed
+
+- Extracted the statements account filter into
+  `statements::matches_account` and deduplicated CLI + MCP
+  call sites. Both now share the same form-aware matcher.
+
+### Skill
+
+- "Bank Statements" section now warns about the 20-page Read
+  limit and the `pages: "1-20"` workaround.
+- New section "When `mm transactions` returns empty for
+  historical periods" — tells the agent to fall through to
+  statement PDFs when bank sync has gaps.
+- New fallback note for `mm statements list` returning empty:
+  direct `ls` of the Statements folder bypasses the heuristic
+  filter.
+- Three new Common Pitfalls rows covering the failure modes
+  above.
+
 ## [0.3.0] - 2026-04-20
 
 ### Added

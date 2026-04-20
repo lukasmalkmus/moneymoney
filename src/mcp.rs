@@ -349,16 +349,7 @@ impl Server {
         let root = statements::default_root();
         let mut items = statements::walk(&root).map_err(to_mcp_err)?;
         if let Some(needle) = &args.0.account {
-            let n = needle.trim();
-            let n_lower = n.to_lowercase();
-            items.retain(|s| {
-                let by_hint = s
-                    .account_hint
-                    .as_ref()
-                    .is_some_and(|h| n.ends_with(h.as_str()) || h.contains(n));
-                let by_bank = s.bank.to_lowercase().contains(&n_lower);
-                by_hint || by_bank
-            });
+            items.retain(|s| statements::matches_account(s, needle));
         }
         if let Some(since_s) = &args.0.since {
             let fmt = time::macros::format_description!("[year]-[month]-[day]");

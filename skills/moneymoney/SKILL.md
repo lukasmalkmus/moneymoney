@@ -143,6 +143,31 @@ mm statements get Girokonto_5437633269_Kontoauszug_20260108.pdf
 - **Non-textual statements** (Trade Republic sometimes ships scanned
   PDFs): Read will return page-level image content; describe what's
   visible rather than pretending to have parsed text.
+- **PDFs > 20 pages**: MoneyMoney's monthly `Kontoauszug` is often
+  20–30 pages. `Read` refuses anything over 20 pages without the
+  `pages` parameter. When it errors with *"too many pages"*, retry
+  with `pages: "1-20"`, then `pages: "21-40"` for the rest.
+- **`mm statements list` returns empty when you expect results**:
+  the filename filter is heuristic. Fall back to a direct filesystem
+  listing of the Statements folder and pick PDFs by name:
+
+  ```bash
+  ls "$HOME/Library/Containers/com.moneymoney-app.retail/Data/Library/Application Support/MoneyMoney/Statements/<Bank>/"
+  ```
+
+  Then `Read` the absolute path directly — same result as `mm
+  statements get`, minus the filter.
+
+## When `mm transactions` returns empty for historical periods
+
+Banks (notably ING) purge synced transactions after roughly 90 days;
+MoneyMoney only has what it pulled while active. **For anything older
+than ~3 months, statement PDFs are the authoritative source**, not
+`mm transactions`. If the user asks about last year's spending or a
+specific transaction from months ago and `mm transactions --from …`
+returns zero or suspiciously few rows, switch to `mm statements list`
+and read the monthly `Kontoauszug` PDFs instead — don't conclude
+"there's no data."
 
 ## Account References
 
@@ -192,6 +217,9 @@ directly.
 | Searching transactions without a date range | Always pass `--from` / `--to` | Default range is last 90 days |
 | Answering a statement question from filenames alone | `mm statements get` + `Read` the PDF | Statements are PDFs — their content is the answer |
 | "I can't make transfers — I have no tools for that" | Use `mm transfer create`; Claude Code prompts for approval, MoneyMoney's GUI+TAN is the real gate | Write verbs exist; they are only kept out of `allowed-tools` so every call requires explicit approval |
+| `Read` fails with "too many pages" on a statement PDF | Retry with `pages: "1-20"` (and further chunks) | Claude Code caps unguided PDF reads at 20 pages |
+| `mm transactions --from 2024-…` returns zero and you conclude "no data" | Switch to `mm statements list` + Read the monthly PDFs | Banks purge transactions after ~90 days; PDFs always contain the full history |
+| `mm statements list --account "ING/Girokonto"` returns empty | `ls "$HOME/Library/Containers/com.moneymoney-app.retail/Data/Library/Application Support/MoneyMoney/Statements/ING/"` and Read the paths directly | Filename filter is heuristic; bypass it when it misses |
 
 ## Exit Codes
 

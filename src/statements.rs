@@ -119,6 +119,78 @@ pub fn walk(root: &Path) -> Result<Vec<Statement>, StatementsError> {
     Ok(out)
 }
 
+/// Whether a [`Statement`] matches a user-supplied `--account` reference.
+///
+/// Accepted forms (first match wins):
+///
+/// 1. **`Bank/Name`** (e.g. `"ING/Girokonto"`): bank folder must equal the
+///    left side case-insensitively AND the filename must start with the
+///    right side followed by `_` (matches `Girokonto_5437633269_…`). This
+///    is the form the skill recommends for account resolution and it MUST
+///    work here too.
+/// 2. **Account number / IBAN / digit suffix** (6+ digits anywhere in the
+///    needle): match the trailing digits of the needle against the
+///    filename's `account_hint`. Works for bare numbers (`5437633269`) and
+///    full IBANs (`DE…5437633269`).
+/// 3. **Bare bank name** (e.g. `"ING"`): substring match against the bank
+///    folder name, case-insensitive.
+///
+/// Leading/trailing whitespace in `needle` is ignored.
+#[must_use]
+pub fn matches_account(statement: &Statement, needle: &str) -> bool {
+    let needle = needle.trim();
+    if needle.is_empty() {
+        return true;
+    }
+
+    // Form 1: "Bank/Name" path — require exact bank + filename-prefix.
+    if let Some((bank_part, name_part)) = needle.split_once('/') {
+        let bank_ok = statement.bank.eq_ignore_ascii_case(bank_part.trim());
+        let name_trim = name_part.trim();
+        let filename_prefix = format!("{name_trim}_");
+        let name_ok = statement
+            .filename
+            .to_lowercase()
+            .starts_with(&filename_prefix.to_lowercase());
+        return bank_ok && name_ok;
+    }
+
+    // Form 2: digit-bearing ref (account number, IBAN with trailing digits).
+    // Extract the trailing digit run; if it's 6+ digits, compare against the
+    // filename's account_hint.
+    let trailing_digits: String = needle
+        .chars()
+        .rev()
+        .take_while(char::is_ascii_digit)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
+    if trailing_digits.len() >= 6 {
+        if let Some(hint) = statement.account_hint.as_deref() {
+            // IBANs end with the account number; bank-supplied hints truncate
+            // the leading zeros. Accept either hint == trailing or
+            // trailing.ends_with(hint) (IBAN suffix) or hint.ends_with(trailing)
+            // (bare number that is longer than the hint).
+            if hint == trailing_digits
+                || trailing_digits.ends_with(hint)
+                || hint.ends_with(&trailing_digits)
+            {
+                return true;
+            }
+        }
+        // Fall through: a digit ref with no hint match is a miss even if the
+        // bank name happens to contain the digits (unlikely but defensible).
+        return false;
+    }
+
+    // Form 3: bare bank name (or anything else) — substring match on bank.
+    statement
+        .bank
+        .to_lowercase()
+        .contains(&needle.to_lowercase())
+}
+
 fn parse_filename(filename: &str) -> (Option<String>, Option<Date>) {
     let fmt = format_description!("[year][month][day]");
     if let Some(caps) = FILENAME_RE.captures(filename) {
@@ -152,5 +224,77 @@ mod tests {
         let (account, date) = parse_filename("Information_20260219.pdf");
         assert_eq!(account, None);
         assert_eq!(date.unwrap().to_string(), "2026-02-19");
+    }
+
+    fn stmt(bank: &str, filename: &str) -> Statement {
+        let (account_hint, date) = parse_filename(filename);
+        Statement {
+            bank: bank.to_owned(),
+            filename: filename.to_owned(),
+            path: PathBuf::from(filename),
+            date,
+            account_hint,
+            size: 0,
+        }
+    }
+
+    #[test]
+    fn matches_bank_slash_name() {
+        let s = stmt("ING", "Girokonto_5437633269_Kontoauszug_20250601.pdf");
+        assert!(matches_account(&s, "ING/Girokonto"));
+        assert!(matches_account(&s, "ing/girokonto")); // case-insensitive
+    }
+
+    #[test]
+    fn bank_slash_name_rejects_wrong_bank() {
+        let s = stmt("ING", "Girokonto_5437633269_Kontoauszug_20250601.pdf");
+        assert!(!matches_account(&s, "Trade Republic/Girokonto"));
+    }
+
+    #[test]
+    fn bank_slash_name_rejects_wrong_name() {
+        let s = stmt("ING", "Girokonto_5437633269_Kontoauszug_20250601.pdf");
+        assert!(!matches_account(&s, "ING/Depot"));
+    }
+
+    #[test]
+    fn matches_bare_bank() {
+        let s = stmt("ING", "Girokonto_5437633269_Kontoauszug_20250601.pdf");
+        assert!(matches_account(&s, "ING"));
+        assert!(matches_account(&s, "ing"));
+    }
+
+    #[test]
+    fn matches_account_number() {
+        let s = stmt("ING", "Girokonto_5437633269_Kontoauszug_20250601.pdf");
+        assert!(matches_account(&s, "5437633269"));
+    }
+
+    #[test]
+    fn matches_iban_trailing_digits() {
+        // IBAN ending in the account's digit hint.
+        let s = stmt("ING", "Girokonto_5437633269_Kontoauszug_20250601.pdf");
+        assert!(matches_account(&s, "DE89370400445437633269"));
+    }
+
+    #[test]
+    fn digit_ref_does_not_match_unrelated_account() {
+        let s = stmt("ING", "Girokonto_5437633269_Kontoauszug_20250601.pdf");
+        assert!(!matches_account(&s, "9999999999"));
+    }
+
+    #[test]
+    fn bank_wide_statements_only_match_bank() {
+        let s = stmt("ING", "Information_20260219.pdf");
+        assert!(matches_account(&s, "ING"));
+        assert!(!matches_account(&s, "5437633269"));
+        assert!(!matches_account(&s, "ING/Girokonto"));
+    }
+
+    #[test]
+    fn empty_needle_keeps_everything() {
+        let s = stmt("ING", "Girokonto_5437633269_Kontoauszug_20250601.pdf");
+        assert!(matches_account(&s, ""));
+        assert!(matches_account(&s, "   "));
     }
 }
