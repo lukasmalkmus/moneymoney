@@ -12,7 +12,9 @@
 use std::future::Future;
 
 use serde::de::DeserializeOwned;
+#[cfg(target_os = "macos")]
 use tokio::process::Command;
+#[cfg(target_os = "macos")]
 use tracing::debug;
 
 use crate::moneymoney::MoneyMoneyError;
@@ -90,6 +92,7 @@ pub async fn run_text<R: OsascriptRunner>(
 /// | `isn't running` / `-600` | [`NotRunning`](MoneyMoneyError::NotRunning) |
 /// | `Can't get application "MoneyMoney"` / `-10814` | [`NotInstalled`](MoneyMoneyError::NotInstalled) |
 /// | anything else | [`ScriptError`](MoneyMoneyError::ScriptError) carrying the stderr text |
+#[cfg(any(target_os = "macos", test))]
 fn classify_stderr(stderr: &str) -> MoneyMoneyError {
     if stderr.contains("Locked database") || stderr.contains("-2720") {
         MoneyMoneyError::DatabaseLocked
