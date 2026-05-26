@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-26
+
+### Added
+
+- Add Codex plugin metadata and marketplace packaging alongside the existing
+  Claude Code plugin.
+- Add bundled MCP configuration for plugin and desktop hosts using `mm mcp`.
+
+### Changed
+
+- Make the plugin shim and binary-sync hook work with Codex plugin
+  environment variables as well as Claude Code's variables.
+
 ## [0.5.0] - 2026-04-21
 
 ### Fixed

@@ -17,8 +17,8 @@
 set -euo pipefail
 
 self_dir="$(cd "$(dirname "$0")" && pwd)"
-plugin_root="${CLAUDE_PLUGIN_ROOT:-$(cd "$self_dir/.." && pwd)}"
-data_dir="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/moneymoney}"
+plugin_root="${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$(cd "$self_dir/.." && pwd)}}"
+data_dir="${PLUGIN_DATA:-${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/moneymoney}}"
 
 # --- 1) Prefer a user-installed mm -------------------------------------------
 
@@ -29,7 +29,10 @@ fi
 
 # --- 2) Re-use the plugin-managed download if versions match -----------------
 
-plugin_json="$plugin_root/.claude-plugin/plugin.json"
+plugin_json="$plugin_root/.codex-plugin/plugin.json"
+if [[ ! -f "$plugin_json" ]]; then
+  plugin_json="$plugin_root/.claude-plugin/plugin.json"
+fi
 if [[ ! -f "$plugin_json" ]]; then
   echo "mm: plugin.json not found at $plugin_json" >&2
   exit 127

@@ -1,0 +1,21 @@
+{
+  "name": "moneymoney",
+  "interface": {
+    "displayName": "MoneyMoney"
+  },
+  "plugins": [
+    {
+      "name": "moneymoney",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/lukasmalkmus/moneymoney.git",
+        "ref": "main"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

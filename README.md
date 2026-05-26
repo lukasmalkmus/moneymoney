@@ -8,13 +8,14 @@ statements through a single Rust binary that works as:
 
 - A standalone command-line tool (`mm accounts list`, `mm transactions --account …`, …)
 - An MCP server over stdio (`mm mcp`) for Claude Desktop and other MCP hosts
-- A Claude Code plugin that vendors both
+- Claude Code and Codex plugins that vendor both
 
 ## Install
 
 | Path | Command | Use when |
 |---|---|---|
-| Plugin | `/plugin marketplace add lukasmalkmus/moneymoney`<br>`/plugin install moneymoney@moneymoney` | You use Claude Code and want a one-line setup. The plugin shim auto-downloads the right platform binary on first use. |
+| Claude Code plugin | `/plugin marketplace add lukasmalkmus/moneymoney`<br>`/plugin install moneymoney@moneymoney` | You use Claude Code and want a one-line setup. The plugin shim auto-downloads the right platform binary on first use. |
+| Codex plugin | `codex plugin marketplace add lukasmalkmus/moneymoney`<br>`codex plugin add moneymoney@moneymoney` | You use Codex and want the skill plus MCP server bundled. |
 | Homebrew | `brew install lukasmalkmus/tap/mm` | You want `mm` on your PATH outside Claude Code too. |
 | Cargo | `cargo install moneymoney --locked` | You have a Rust toolchain and prefer `cargo`. |
 | From source | `git clone https://github.com/lukasmalkmus/moneymoney && cargo install --path moneymoney` | You're hacking on `mm`. |

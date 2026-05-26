@@ -11,7 +11,7 @@ description: |
   money", "pay this invoice", "zahle diese Rechnung".
 user-invocable: true
 argument-hint: <question-or-query>
-allowed-tools: Bash(mm status), Bash(mm accounts *), Bash(mm transactions *), Bash(mm categories *), Bash(mm portfolio *), Bash(mm statements *), Bash(mm version), Bash(mm mcp *), Read
+allowed-tools: Bash(mm status), Bash(mm accounts *), Bash(mm transactions *), Bash(mm categories *), Bash(mm portfolio *), Bash(mm statements *), Bash(mm version), Bash(mm mcp), Bash(mm mcp *), Read
 ---
 
 # MoneyMoney Query

@@ -11,9 +11,12 @@
 
 set -euo pipefail
 
-plugin_root="${CLAUDE_PLUGIN_ROOT:-}"
-data_dir="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/moneymoney}"
-plugin_json="$plugin_root/.claude-plugin/plugin.json"
+plugin_root="${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-}}"
+data_dir="${PLUGIN_DATA:-${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/moneymoney}}"
+plugin_json="$plugin_root/.codex-plugin/plugin.json"
+if [[ ! -f "$plugin_json" ]]; then
+  plugin_json="$plugin_root/.claude-plugin/plugin.json"
+fi
 
 # Bail out quietly if the plugin isn't fully wired up (e.g., first run
 # before the plugin finishes cloning).

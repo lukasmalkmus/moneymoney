@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "moneymoney": {
+      "command": "mm",
+      "args": ["mcp"]
+    }
+  }
+}
