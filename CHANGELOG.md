@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-06-17
+
+### Fixed
+
+- Resolve the bundled MCP server via `${CLAUDE_PLUGIN_ROOT}/bin/mm` instead of a
+  bare `mm` command. Plugin hosts spawn the stdio MCP server without the plugin's
+  `bin/` on `PATH`, so the bare name failed with "Executable not found in $PATH".
+
+### Changed
+
+- Bump dependencies: `rmcp` 1.7.0, `plist` 1.9.0, `rust_decimal` 1.42.1, and refresh
+  transitive dependencies via `cargo update`.
+
 ## [0.6.0] - 2026-05-26
 
 ### Added

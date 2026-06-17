@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "moneymoney": {
-      "command": "mm",
+      "command": "${CLAUDE_PLUGIN_ROOT}/bin/mm",
       "args": ["mcp"]
     }
   }

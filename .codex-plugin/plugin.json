@@ -1,6 +1,6 @@
 {
   "name": "moneymoney",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Agent-native CLI and MCP server for MoneyMoney",
   "author": {
     "name": "Lukas Malkmus",
