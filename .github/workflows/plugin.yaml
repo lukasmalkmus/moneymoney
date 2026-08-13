@@ -1,0 +1,58 @@
+name: Plugin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".claude-plugin/**"
+      - ".codex-plugin/**"
+      - ".agents/**"
+      - "skills/**"
+      - "hooks/**"
+      - ".mcp.json"
+      - ".github/workflows/plugin.yaml"
+  pull_request:
+    paths:
+      - ".claude-plugin/**"
+      - ".codex-plugin/**"
+      - ".agents/**"
+      - "skills/**"
+      - "hooks/**"
+      - ".mcp.json"
+      - ".github/workflows/plugin.yaml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: claude plugin validate . --strict
+      - run: claude plugin validate .claude-plugin/plugin.json --strict
+
+  versions:
+    name: Versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Manifest versions match the crate
+        run: |
+          crate=$(grep -m1 '^version' Cargo.toml | sed 's/.*"\(.*\)"/\1/')
+          for f in .claude-plugin/plugin.json .codex-plugin/plugin.json; do
+            got=$(jq -r '.version' "$f")
+            [ "$got" = "$crate" ] || { echo "::error file=$f::version $got != crate $crate"; exit 1; }
+          done
+          got=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
+          [ "$got" = "$crate" ] || {
+            echo "::error file=.claude-plugin/marketplace.json::version $got != crate $crate"
+            exit 1
+          }
+          echo "all manifests at $crate"

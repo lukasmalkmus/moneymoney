@@ -9,6 +9,9 @@ on:
       - ".claude-plugin/**"
       - "skills/**"
       - "hooks/**"
+      - ".codex-plugin/**"
+      - ".agents/**"
+      - ".mcp.json"
   pull_request:
     paths-ignore:
       - "**.md"
@@ -16,6 +19,9 @@ on:
       - ".claude-plugin/**"
       - "skills/**"
       - "hooks/**"
+      - ".codex-plugin/**"
+      - ".agents/**"
+      - ".mcp.json"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
