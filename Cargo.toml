@@ -17,7 +17,7 @@ path = "src/main.rs"
 # CLI
 anyhow = "1"
 clap = { version = "4", features = ["derive", "env", "wrap_help"] }
-comfy-table = "7"
+comfy-table = "8"
 owo-colors = "4"
 thiserror = "2"
 

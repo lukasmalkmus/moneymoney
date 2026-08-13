@@ -163,7 +163,7 @@ fn render_table<T: Tabular>(
 ) {
     let headers = T::headers();
     let mut table = Table::new();
-    table.load_preset(ASCII_MARKDOWN);
+    table.load_style(ASCII_MARKDOWN);
     table.set_content_arrangement(ContentArrangement::Dynamic);
 
     if let Some(f) = filter {
@@ -216,7 +216,7 @@ pub fn format_detail<T: DetailView + Serialize>(
         OutputFormat::Table => {
             let fields = item.fields();
             let mut table = Table::new();
-            table.load_preset(ASCII_MARKDOWN);
+            table.load_style(ASCII_MARKDOWN);
             table.set_content_arrangement(ContentArrangement::Dynamic);
             table.set_header(["Field", "Value"]);
             for (name, value) in &fields {

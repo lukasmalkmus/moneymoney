@@ -1,0 +1,5 @@
+[advisories]
+# rkyv reaches the lockfile through rust_decimal's optional `rkyv` feature,
+# which this crate does not enable, so no rkyv code is compiled. Drop this
+# once rust_decimal moves its rkyv dependency to 0.8.
+ignore = ["RUSTSEC-2026-0235"]
