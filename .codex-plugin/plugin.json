@@ -1,6 +1,6 @@
 {
   "name": "moneymoney",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Agent-native CLI and MCP server for MoneyMoney",
   "author": {
     "name": "Lukas Malkmus",
@@ -9,7 +9,13 @@
   "homepage": "https://github.com/lukasmalkmus/moneymoney",
   "repository": "https://github.com/lukasmalkmus/moneymoney",
   "license": "MIT",
-  "keywords": ["moneymoney", "banking", "finance", "mcp", "cli"],
+  "keywords": [
+    "moneymoney",
+    "banking",
+    "finance",
+    "mcp",
+    "cli"
+  ],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "hooks": "./hooks/hooks.json",
@@ -19,7 +25,10 @@
     "longDescription": "Query and act on MoneyMoney accounts, transactions, categories, portfolios, statements, and payment drafts via CLI or MCP.",
     "developerName": "Lukas Malkmus",
     "category": "Productivity",
-    "capabilities": ["Read", "Write"],
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
     "websiteURL": "https://github.com/lukasmalkmus/moneymoney",
     "defaultPrompt": [
       "Check my MoneyMoney account balances",

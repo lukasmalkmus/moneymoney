@@ -3,7 +3,7 @@
   "name": "moneymoney",
   "displayName": "MoneyMoney CLI + MCP",
   "description": "Agent-native CLI and MCP server for MoneyMoney",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "author": {
     "name": "Lukas Malkmus",
     "email": "mail@lukasmalkmus.com"
