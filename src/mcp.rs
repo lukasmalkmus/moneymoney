@@ -14,7 +14,7 @@ use rmcp::ServerHandler;
 use rmcp::ServiceExt;
 use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
-use rmcp::model::{Implementation, ProtocolVersion, ServerCapabilities, ServerInfo};
+use rmcp::model::{Implementation, ServerCapabilities, ServerInfo};
 use rmcp::transport::stdio;
 use rmcp::{tool, tool_handler, tool_router};
 use schemars::JsonSchema;
@@ -563,16 +563,13 @@ fn confirmation_json(into_outbox: bool, verb: &str) -> String {
 #[tool_handler(router = self.tool_router)]
 impl ServerHandler for Server {
     fn get_info(&self) -> ServerInfo {
-        let mut info = ServerInfo::default();
-        info.protocol_version = ProtocolVersion::V_2025_06_18;
-        info.capabilities = ServerCapabilities::builder().enable_tools().build();
-        info.server_info = Implementation::from_build_env();
-        "moneymoney".clone_into(&mut info.server_info.name);
-        env!("CARGO_PKG_VERSION").clone_into(&mut info.server_info.version);
-        info.instructions = Some(
-            "Read-only access to MoneyMoney accounts, transactions, categories, portfolios, and on-disk bank statements. MoneyMoney must be running and unlocked. Use `status` first when debugging.".to_owned(),
-        );
-        info
+        ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
+            .with_server_info(Implementation::new("moneymoney", env!("CARGO_PKG_VERSION")))
+            .with_instructions(
+                "Read-only access to MoneyMoney accounts, transactions, categories, \
+                 portfolios, and on-disk bank statements. MoneyMoney must be running and \
+                 unlocked. Use `status` first when debugging.",
+            )
     }
 }
 
