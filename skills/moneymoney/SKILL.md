@@ -1,14 +1,16 @@
 ---
 name: moneymoney
 description: |
-  Query and act on MoneyMoney data via the `mm` CLI: accounts, transactions,
-  categories, portfolio, bank statement PDFs; plus drafting SEPA transfers,
-  direct debits, batch transfers, and offline-account entries through
-  MoneyMoney's GUI+TAN flow. Use whenever the user asks about personal
-  finance, bank balances, recent transactions, spending, portfolio holdings,
-  bank statements, OR wants to make/draft a payment — "Überweisung",
-  "überweisen", "Lastschrift", "SEPA", "transfer", "direct debit", "send
-  money", "pay this invoice", "zahle diese Rechnung".
+  Query and act on MoneyMoney data via the `mm` CLI. Accounts, transactions,
+  categories, portfolio, and bank statement PDFs, plus drafting SEPA
+  transfers, direct debits, batch transfers, and offline-account entries
+  through MoneyMoney's GUI and TAN flow.
+when_to_use: |
+  Use whenever the user asks about personal finance, bank balances, recent
+  transactions, spending, portfolio holdings, or bank statements, OR wants to
+  make or draft a payment. Triggers on "Überweisung", "überweisen",
+  "Lastschrift", "SEPA", "transfer", "direct debit", "send money", "pay this
+  invoice", "zahle diese Rechnung".
 user-invocable: true
 argument-hint: <question-or-query>
 allowed-tools: Bash(mm status), Bash(mm accounts *), Bash(mm transactions *), Bash(mm categories *), Bash(mm portfolio *), Bash(mm statements *), Bash(mm version), Bash(mm mcp), Bash(mm mcp *), Read

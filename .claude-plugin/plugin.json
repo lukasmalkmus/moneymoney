@@ -1,5 +1,7 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "moneymoney",
+  "displayName": "MoneyMoney CLI + MCP",
   "description": "Agent-native CLI and MCP server for MoneyMoney",
   "version": "0.6.1",
   "author": {
@@ -9,6 +11,12 @@
   "homepage": "https://github.com/lukasmalkmus/moneymoney",
   "repository": "https://github.com/lukasmalkmus/moneymoney",
   "license": "MIT",
-  "keywords": ["moneymoney", "banking", "finance", "mcp", "cli"],
+  "keywords": [
+    "moneymoney",
+    "banking",
+    "finance",
+    "mcp",
+    "cli"
+  ],
   "mcpServers": "./.mcp.json"
 }
