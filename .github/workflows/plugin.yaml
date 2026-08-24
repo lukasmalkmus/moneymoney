@@ -30,8 +30,8 @@ jobs:
     name: Validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: npm install -g @anthropic-ai/claude-code
@@ -42,7 +42,7 @@ jobs:
     name: Versions
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Manifest versions match the crate
         run: |
           crate=$(grep -m1 '^version' Cargo.toml | sed 's/.*"\(.*\)"/\1/')
