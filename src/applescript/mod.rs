@@ -54,6 +54,7 @@ impl OsascriptRunner for TokioOsascriptRunner {
 
 #[cfg(not(target_os = "macos"))]
 impl OsascriptRunner for TokioOsascriptRunner {
+    #[allow(clippy::unused_async_trait_impl)] // the trait method is async
     async fn run(&self, _script: &str) -> Result<Vec<u8>, MoneyMoneyError> {
         Err(MoneyMoneyError::NotSupported)
     }

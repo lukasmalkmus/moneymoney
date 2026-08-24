@@ -561,6 +561,7 @@ fn confirmation_json(into_outbox: bool, verb: &str) -> String {
 }
 
 #[tool_handler(router = self.tool_router)]
+#[allow(clippy::unused_async_trait_impl)] // rmcp's macro generates a ready-future impl
 impl ServerHandler for Server {
     fn get_info(&self) -> ServerInfo {
         ServerInfo::new(ServerCapabilities::builder().enable_tools().build())

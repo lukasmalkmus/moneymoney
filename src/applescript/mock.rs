@@ -37,6 +37,7 @@ impl MockOsascriptRunner {
 }
 
 impl OsascriptRunner for MockOsascriptRunner {
+    #[allow(clippy::unused_async_trait_impl)] // the trait method is async
     async fn run(&self, script: &str) -> Result<Vec<u8>, MoneyMoneyError> {
         if let Ok(mut s) = self.scripts.lock() {
             s.push(script.to_owned());
