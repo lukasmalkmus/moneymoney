@@ -14,7 +14,7 @@ use rmcp::ServerHandler;
 use rmcp::ServiceExt;
 use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
-use rmcp::model::{Implementation, ServerCapabilities, ServerInfo};
+use rmcp::model::{Implementation, ServerCapabilities, ServerConfig};
 use rmcp::transport::stdio;
 use rmcp::{tool, tool_handler, tool_router};
 use schemars::JsonSchema;
@@ -563,8 +563,8 @@ fn confirmation_json(into_outbox: bool, verb: &str) -> String {
 #[tool_handler(router = self.tool_router)]
 #[allow(clippy::unused_async_trait_impl)] // rmcp's macro generates a ready-future impl
 impl ServerHandler for Server {
-    fn get_info(&self) -> ServerInfo {
-        ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
+    fn get_info(&self) -> ServerConfig {
+        ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
             .with_server_info(Implementation::new("moneymoney", env!("CARGO_PKG_VERSION")))
             .with_instructions(
                 "Read-only access to MoneyMoney accounts, transactions, categories, \

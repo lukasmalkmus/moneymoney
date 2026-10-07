@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Refresh dependencies via `cargo update`, including `rmcp` 3.5.1, `clap` 4.6.7,
+  `comfy-table` 8.0.1, `thiserror` 2.0.21, and `tokio` 1.53.2.
+
 ## [0.7.1] - 2026-08-24
 
 ### Changed
