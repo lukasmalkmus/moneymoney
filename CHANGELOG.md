@@ -7,10 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-10-07
+
+### Fixed
+
+- Drop the literal `<system-reminder>` tag from the skill nudge. Claude Code
+  wraps hook context in its own reminder and, since 2.1.292, escapes tags in
+  hook output, so the model received an escaped tag.
+- Quote the plugin root in the hook commands. The hooks failed with exit 127
+  when the plugin directory path contained a space.
+
 ### Changed
 
-- Refresh dependencies via `cargo update`, including `rmcp` 3.5.1, `clap` 4.6.7,
-  `comfy-table` 8.0.1, `thiserror` 2.0.21, and `tokio` 1.53.2.
+- Bump dependencies: `clap` 4.6.7, `comfy-table` 8.0.1, `dirs` 7,
+  `owo-colors` 4.4.0, `plist` 1.10.1, `rmcp` 3.5.1, `rust_decimal` 1.43.0,
+  `thiserror` 2.0.21, `tokio` 1.53.2 and `toml` 1.1.6. Refresh transitive
+  dependencies via `cargo update`.
 
 ## [0.7.1] - 2026-08-24
 
