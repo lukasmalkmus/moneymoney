@@ -8,7 +8,7 @@ session_id=$(echo "$input" | jq -r '.session_id // empty' 2>/dev/null)
 marker="${TMPDIR:-/tmp}/.moneymoney-skill-nudge-${session_id:-$PPID}"
 [ -f "$marker" ] && exit 0
 touch "$marker"
-nudge='<system-reminder>The "moneymoney" skill provides guided mm workflows. Invoke it with /moneymoney or the Skill tool.</system-reminder>'
+nudge='The "moneymoney" skill provides guided mm workflows. Invoke it with /moneymoney or the Skill tool.'
 jq -n --arg nudge "$nudge" '{
   hookSpecificOutput: {
     hookEventName: "PostToolUse",
