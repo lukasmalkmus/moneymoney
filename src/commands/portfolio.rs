@@ -54,6 +54,7 @@ impl DetailView for Security {
             ("RelativeProfit", self.relative_profit.to_string()),
             ("Market", self.market.clone()),
             ("AccountUUID", self.account_uuid.clone()),
+            ("AssetClass", self.asset_class.clone()),
             ("AssetClassUUID", self.asset_class_uuid.clone()),
         ]
     }
@@ -77,6 +78,7 @@ impl FieldNames for Security {
             "relativeprofit",
             "market",
             "accountuuid",
+            "assetclass",
             "assetclassuuid",
         ]
     }
