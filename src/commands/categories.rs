@@ -1,14 +1,29 @@
 //! `mm categories` — list the category tree.
 
 use crate::applescript::{OsascriptRunner, run_plist};
-use crate::moneymoney::types::Category;
+use crate::moneymoney::types::{Budget, Category};
 use crate::output::{DetailView, FieldFilter, FieldNames, OutputFormat, Tabular, format_list};
 
 const SCRIPT_EXPORT_CATEGORIES: &str = "tell application \"MoneyMoney\" to export categories";
 
+/// Table cell for an optional budget: `"400 monthly, 123.45 available"`.
+fn budget_cell(budget: Option<&Budget>) -> String {
+    budget.map_or_else(String::new, |b| {
+        format!("{} {}, {} available", b.amount, b.period, b.available)
+    })
+}
+
 impl Tabular for Category {
     fn headers() -> &'static [&'static str] {
-        &["Name", "Group", "Indentation", "Default", "Currency"]
+        &[
+            "Name",
+            "Group",
+            "Indentation",
+            "Default",
+            "Currency",
+            "Budget",
+            "Rules",
+        ]
     }
 
     fn row(&self) -> Vec<String> {
@@ -18,6 +33,8 @@ impl Tabular for Category {
             self.indentation.to_string(),
             self.default.to_string(),
             self.currency.clone(),
+            budget_cell(self.budget.as_ref()),
+            self.rules.clone(),
         ]
     }
 }
@@ -31,6 +48,8 @@ impl DetailView for Category {
             ("Indentation", self.indentation.to_string()),
             ("Default", self.default.to_string()),
             ("Currency", self.currency.clone()),
+            ("Budget", budget_cell(self.budget.as_ref())),
+            ("Rules", self.rules.clone()),
         ]
     }
 }
@@ -44,6 +63,8 @@ impl FieldNames for Category {
             "indentation",
             "default",
             "currency",
+            "budget",
+            "rules",
         ]
     }
 }

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `mm categories` and the MCP `list_categories` tool return each category's
+  budget (`{amount, available, period}`, or `null` when none is set) and its
+  auto-categorization rules (`rules`, verbatim). Both are also valid `-F`
+  fields.
+
 ## [0.7.2] - 2026-10-07
 
 ### Fixed
