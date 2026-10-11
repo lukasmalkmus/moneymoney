@@ -38,7 +38,7 @@ User wants…
   │     └── Detail ──────────── mm accounts get <REF>
   ├── Recent transactions ────── mm transactions --account <REF> [--from YYYY-MM-DD]
   │     └── Filtered ────────── mm transactions --account <REF> --search "Supermarket"
-  ├── Category tree ──────────── mm categories
+  ├── Category tree ──────────── mm categories  (incl. budgets + auto-categorization rules)
   ├── Portfolio holdings ─────── mm portfolio --account <DEPOT-REF>
   ├── Bank statement PDFs ────── mm statements list [--account <REF>] [--since YYYY-MM-DD]
   │     └── Retrieve a PDF ──── mm statements get <FILENAME>
