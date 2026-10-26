@@ -107,7 +107,6 @@ fn deserialize_amount<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Deci
     Ok(f64_to_decimal(raw))
 }
 
-#[allow(dead_code, reason = "reserved for budget / optional amount fields")]
 fn deserialize_amount_opt<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> Result<Option<Decimal>, D::Error> {
@@ -249,6 +248,54 @@ pub struct Category {
     /// Currency used when the category has a budget.
     #[serde(default)]
     pub currency: String,
+
+    /// Budget for this category, or `None` when no budget is set.
+    #[serde(default, deserialize_with = "deserialize_budget")]
+    pub budget: Option<Budget>,
+
+    /// Rules for automatic categorization, verbatim as entered in
+    /// MoneyMoney (e.g. `"REWE" OR "EDEKA"`). Empty when the category has
+    /// no rules.
+    #[serde(default)]
+    pub rules: String,
+}
+
+/// A category budget from [`Category::budget`].
+#[derive(Debug, Clone, Serialize)]
+pub struct Budget {
+    /// Budget per period, in the category's currency.
+    pub amount: Decimal,
+    /// Amount left in the current period.
+    pub available: Decimal,
+    /// Budget period (e.g. `"monthly"`).
+    pub period: String,
+}
+
+// MoneyMoney exports a budget dict for every category, with `amount = 0` when
+// no budget is set, and an empty dict for the default category. Both become
+// `None` so callers don't mistake them for a zero budget.
+fn deserialize_budget<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<Budget>, D::Error> {
+    #[derive(Deserialize)]
+    struct RawBudget {
+        #[serde(default, deserialize_with = "deserialize_amount_opt")]
+        amount: Option<Decimal>,
+        #[serde(default, deserialize_with = "deserialize_amount_opt")]
+        available: Option<Decimal>,
+        #[serde(default)]
+        period: String,
+    }
+
+    let raw = RawBudget::deserialize(deserializer)?;
+    Ok(raw
+        .amount
+        .filter(|amount| !amount.is_zero())
+        .map(|amount| Budget {
+            amount,
+            available: raw.available.unwrap_or_default(),
+            period: raw.period,
+        }))
 }
 
 /// Envelope returned by `export portfolio ... as "plist"`.
@@ -380,5 +427,65 @@ mod tests {
         let entry: BalanceEntry = plist::from_bytes(xml.as_bytes()).unwrap();
         assert_eq!(entry.amount, Decimal::from_str("12.34").unwrap());
         assert_eq!(entry.currency, "EUR");
+    }
+
+    fn category_plist(budget: &str, rules: &str) -> String {
+        format!(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>name</key><string>Groceries</string>
+  <key>uuid</key><string>c0ffee</string>
+  {budget}
+  {rules}
+</dict>
+</plist>"#
+        )
+    }
+
+    #[test]
+    fn category_with_budget_and_rules() {
+        let xml = category_plist(
+            "<key>budget</key><dict>\
+               <key>amount</key><real>400</real>\
+               <key>available</key><real>123.45000000000001</real>\
+               <key>period</key><string>monthly</string>\
+             </dict>",
+            "<key>rules</key><string>\"REWE\" OR \"EDEKA\"</string>",
+        );
+        let cat: Category = plist::from_bytes(xml.as_bytes()).unwrap();
+        let budget = cat.budget.unwrap();
+        assert_eq!(budget.amount, Decimal::from_str("400").unwrap());
+        assert_eq!(budget.available, Decimal::from_str("123.45").unwrap());
+        assert_eq!(budget.period, "monthly");
+        assert_eq!(cat.rules, r#""REWE" OR "EDEKA""#);
+    }
+
+    #[test]
+    fn category_zero_budget_is_none() {
+        let xml = category_plist(
+            "<key>budget</key><dict>\
+               <key>amount</key><real>0.0</real>\
+               <key>available</key><real>0.0</real>\
+               <key>period</key><string>monthly</string>\
+             </dict>",
+            "<key>rules</key><string></string>",
+        );
+        let cat: Category = plist::from_bytes(xml.as_bytes()).unwrap();
+        assert!(cat.budget.is_none());
+        assert_eq!(cat.rules, "");
+    }
+
+    #[test]
+    fn category_empty_or_missing_budget_is_none() {
+        let empty = category_plist("<key>budget</key><dict/>", "");
+        let cat: Category = plist::from_bytes(empty.as_bytes()).unwrap();
+        assert!(cat.budget.is_none());
+
+        let missing = category_plist("", "");
+        let cat: Category = plist::from_bytes(missing.as_bytes()).unwrap();
+        assert!(cat.budget.is_none());
+        assert_eq!(cat.rules, "");
     }
 }

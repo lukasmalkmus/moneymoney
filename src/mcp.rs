@@ -298,7 +298,7 @@ impl Server {
 
     /// Return the full category tree.
     #[tool(
-        description = "List the full MoneyMoney category tree. Returns an array of {uuid, name, group, indentation, budget, currency}. Hierarchy is encoded via indentation and document order.",
+        description = "List the full MoneyMoney category tree. Returns an array of {uuid, name, group, indentation, default, currency, budget, rules}. Hierarchy is encoded via indentation and document order. 'budget' is {amount, available, period} or null when no budget is set. 'rules' is the auto-categorization rule text exactly as entered in MoneyMoney (e.g. '\"REWE\" OR \"EDEKA\"'), empty when the category has none.",
         annotations(read_only_hint = true)
     )]
     async fn list_categories(&self) -> Result<String, rmcp::ErrorData> {
