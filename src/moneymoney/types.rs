@@ -333,6 +333,12 @@ pub struct Security {
     #[serde(rename = "type", default)]
     pub security_type: String,
 
+    /// Name of the MoneyMoney asset class (e.g., "ETFs", "Aktien"). Empty
+    /// for the default class "Sonstige", which the export identifies only by
+    /// [`Self::asset_class_uuid`].
+    #[serde(default)]
+    pub asset_class: String,
+
     /// UUID of the MoneyMoney asset class, if assigned.
     #[serde(default)]
     pub asset_class_uuid: String,
@@ -380,5 +386,57 @@ mod tests {
         let entry: BalanceEntry = plist::from_bytes(xml.as_bytes()).unwrap();
         assert_eq!(entry.amount, Decimal::from_str("12.34").unwrap());
         assert_eq!(entry.currency, "EUR");
+    }
+
+    #[test]
+    fn security_exposes_asset_class_name_and_uuid() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>portfolio</key>
+  <array>
+    <dict>
+      <key>name</key><string>World ETF</string>
+      <key>assetClass</key><string>ETFs</string>
+      <key>assetClassUuid</key><string>4414a931-2dc5-4afe-bae7-e62eadce21ab</string>
+    </dict>
+  </array>
+</dict>
+</plist>"#;
+        let env: PortfolioEnvelope = plist::from_bytes(xml.as_bytes()).unwrap();
+        let security = &env.portfolio[0];
+        assert_eq!(security.asset_class, "ETFs");
+        assert_eq!(
+            security.asset_class_uuid,
+            "4414a931-2dc5-4afe-bae7-e62eadce21ab"
+        );
+
+        let json = serde_json::to_value(security).unwrap();
+        assert_eq!(json["assetClass"], "ETFs");
+    }
+
+    #[test]
+    fn default_asset_class_has_uuid_but_no_name() {
+        // MoneyMoney omits `assetClass` for the default class "Sonstige".
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>portfolio</key>
+  <array>
+    <dict>
+      <key>name</key><string>Cash</string>
+      <key>assetClassUuid</key><string>518b8593-3318-4de4-bcee-7dfc80953de6</string>
+    </dict>
+  </array>
+</dict>
+</plist>"#;
+        let env: PortfolioEnvelope = plist::from_bytes(xml.as_bytes()).unwrap();
+        assert_eq!(env.portfolio[0].asset_class, "");
+        assert_eq!(
+            env.portfolio[0].asset_class_uuid,
+            "518b8593-3318-4de4-bcee-7dfc80953de6"
+        );
     }
 }
