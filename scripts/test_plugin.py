@@ -127,6 +127,7 @@ class PluginTests(unittest.TestCase):
         self.env["TEST_ARCHIVE"] = str(archive)
         self.env["TMPDIR"] = str(self.base / "tmp")
         Path(self.env["TMPDIR"]).mkdir()
+        executable(self.helpers / "mktemp", '#!/bin/bash\n/usr/bin/mktemp -d "$TMPDIR/download.XXXXXXXXXX"\n')
         executable(self.helpers / "uname", "#!/bin/bash\ncase $1 in -s) echo Darwin;; -m) echo arm64;; esac\n")
         executable(self.helpers / "curl", '#!/bin/bash\ncp "$TEST_ARCHIVE" "$3"\n')
         result = self.launch()

@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix Codex MCP startup by resolving the bundled launcher relative to the plugin root.
 - Resolve launcher versions from portable metadata and supply system helper paths in restricted environments.
+- Remove temporary download files before starting the CLI.
 - Remove skill claims that tool metadata guarantees a permission prompt for every write.
 
 ## [0.7.2] - 2026-10-07

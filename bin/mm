@@ -120,4 +120,6 @@ if command -v xattr >/dev/null 2>&1; then
   xattr -d com.apple.quarantine "$installed_binary" 2>/dev/null || true
 fi
 
+# exec replaces the shell without running its EXIT trap.
+rm -rf "$tmp"
 exec "$installed_binary" "$@"
