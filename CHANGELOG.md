@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-10-30
+
+### Added
+
+- Add Agent Plugins 1.0 packaging with portable MCP launch paths and shared Agent Skills while retaining native Claude Code support.
+
+### Fixed
+
+- Fix Codex MCP startup by resolving the bundled launcher relative to the plugin root.
+- Resolve launcher versions from portable metadata and supply system helper paths in restricted environments.
+- Remove skill claims that tool metadata guarantees a permission prompt for every write.
+
 ## [0.7.2] - 2026-10-07
 
 ### Fixed
@@ -176,3 +188,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   nudge hook, and `bin/mm` shim that defers to a user-installed binary.
 - GitHub Actions CI covering fmt, clippy, MSRV, tests (macOS + Linux),
   audit, and rustdoc.
+
+[Unreleased]: https://github.com/lukasmalkmus/moneymoney/compare/v0.7.3...HEAD
+[0.7.3]: https://github.com/lukasmalkmus/moneymoney/compare/v0.7.2...v0.7.3

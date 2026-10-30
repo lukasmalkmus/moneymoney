@@ -4,16 +4,13 @@ description: |
   Query and act on MoneyMoney data via the `mm` CLI. Accounts, transactions,
   categories, portfolio, and bank statement PDFs, plus drafting SEPA
   transfers, direct debits, batch transfers, and offline-account entries
-  through MoneyMoney's GUI and TAN flow.
-when_to_use: |
-  Use whenever the user asks about personal finance, bank balances, recent
+  through MoneyMoney. Use when asked about personal finance, bank balances, recent
   transactions, spending, portfolio holdings, or bank statements, OR wants to
   make or draft a payment. Triggers on "Überweisung", "überweisen",
   "Lastschrift", "SEPA", "transfer", "direct debit", "send money", "pay this
   invoice", "zahle diese Rechnung".
-user-invocable: true
-argument-hint: <question-or-query>
-allowed-tools: Bash(mm status), Bash(mm accounts *), Bash(mm transactions *), Bash(mm categories *), Bash(mm portfolio *), Bash(mm statements *), Bash(mm version), Bash(mm mcp), Bash(mm mcp *), Read
+compatibility: Requires macOS and MoneyMoney. Plugin installation requires Bash, curl, and tar. MoneyMoney must be running and unlocked for application operations.
+allowed-tools: Bash(mm status) Bash(mm accounts *) Bash(mm transactions *) Bash(mm categories *) Bash(mm portfolio *) Bash(mm statements *) Bash(mm version) Bash(mm mcp) Bash(mm mcp *) Read
 ---
 
 # MoneyMoney Query
@@ -21,7 +18,7 @@ allowed-tools: Bash(mm status), Bash(mm accounts *), Bash(mm transactions *), Ba
 Query MoneyMoney accounts, transactions, categories, portfolios, and bank
 statement PDFs via the `mm` CLI.
 
-Process: `$ARGUMENTS`
+Process the user's question or request.
 
 ## Prerequisite
 
@@ -50,18 +47,19 @@ User wants…
   └── Edit transaction meta ─── mm transaction set <UUID> [--checkmark] [--category "..."] [--comment "..."]
 ```
 
-## Actions (Permission-Prompted)
+## Actions and Confirmation
 
-**These ARE available.** `mm transfer *` and `mm transaction *` are
-intentionally not in `allowed-tools` — Claude Code prompts for your
-approval on every call. SEPA transfers additionally require
-confirmation and TAN entry inside MoneyMoney's own window, so money
-never moves without two explicit human gates.
+`mm transfer *` and `mm transaction *` are available and intentionally
+not preapproved by this skill's `allowed-tools`. Tool approval depends on the
+host's policy. The field does not restrict available tools or guarantee a
+permission prompt. Confirm the action and its parameters with the user before
+any write. MoneyMoney handles its own payment review and authorization flow.
 
 If the user says "Überweisung", "überweisen", "Lastschrift", "SEPA",
 "transfer", "send money", or "pay this invoice", do **not** reply "I
-have no tools for that." Draft the command, confirm the parameters
-with the user, and run it. The permission prompt is the safety net.
+have no tools for that." Draft the command and confirm the parameters
+with the user. Follow the host's approval and financial-action policies.
+The user must complete any payment authorization in MoneyMoney.
 
 ### Worked example — pay an invoice PDF
 
@@ -114,8 +112,8 @@ PDFs stored on disk; their filename is an index, not the content.
          ↓ pick the relevant statement(s) by bank/date/account_hint
 2. mm statements get <EXACT_FILENAME>
          ↓ prints the absolute path to the PDF
-3. Read <ABSOLUTE_PATH>
-         ↓ Claude Code's Read tool accepts PDFs directly (page-aware)
+3. Open <ABSOLUTE_PATH> with the host's PDF reader
+         ↓ inspect the document content, using page ranges where needed
 ```
 
 The filename pattern `<AccountType>_<digits>_<DocType>_<YYYYMMDD>.pdf`
@@ -143,12 +141,12 @@ mm statements get Girokonto_5437633269_Kontoauszug_20260108.pdf
   than reading everything. Read only the PDFs plausibly relevant to
   the question.
 - **Non-textual statements** (Trade Republic sometimes ships scanned
-  PDFs): Read will return page-level image content; describe what's
+  PDFs): use a PDF reader that supports page images and describe what's
   visible rather than pretending to have parsed text.
-- **PDFs > 20 pages**: MoneyMoney's monthly `Kontoauszug` is often
-  20–30 pages. `Read` refuses anything over 20 pages without the
-  `pages` parameter. When it errors with *"too many pages"*, retry
-  with `pages: "1-20"`, then `pages: "21-40"` for the rest.
+- **Long PDFs**: MoneyMoney's monthly `Kontoauszug` is often 20–30 pages.
+  Read it in page ranges if the host's PDF reader limits pages per call.
+  In Claude Code, retry a *"too many pages"* error with `pages: "1-20"`,
+  then `pages: "21-40"` for the rest.
 - **`mm statements list` returns empty when you expect results**:
   the filename filter is heuristic. Fall back to a direct filesystem
   listing of the Statements folder and pick PDFs by name:
@@ -218,8 +216,8 @@ directly.
 | Running commands while app is locked | `mm status` first, then retry | Database access fails silently otherwise |
 | Searching transactions without a date range | Always pass `--from` / `--to` | Default range is last 90 days |
 | Answering a statement question from filenames alone | `mm statements get` + `Read` the PDF | Statements are PDFs — their content is the answer |
-| "I can't make transfers — I have no tools for that" | Use `mm transfer create`; Claude Code prompts for approval, MoneyMoney's GUI+TAN is the real gate | Write verbs exist; they are only kept out of `allowed-tools` so every call requires explicit approval |
-| `Read` fails with "too many pages" on a statement PDF | Retry with `pages: "1-20"` (and further chunks) | Claude Code caps unguided PDF reads at 20 pages |
+| "I can't make transfers — I have no tools for that" | Draft the command, confirm parameters, and follow host policy | Write verbs exist, but approval behavior belongs to the host and payment authorization belongs to MoneyMoney |
+| A PDF reader fails with "too many pages" | Retry with a page range (in Claude Code, `pages: "1-20"`) | PDF-reader limits vary by host |
 | `mm transactions --from 2024-…` returns zero and you conclude "no data" | Switch to `mm statements list` + Read the monthly PDFs | Banks purge transactions after ~90 days; PDFs always contain the full history |
 | `mm statements list --account "ING/Girokonto"` returns empty | `ls "$HOME/Library/Containers/com.moneymoney-app.retail/Data/Library/Application Support/MoneyMoney/Statements/ING/"` and Read the paths directly | Filename filter is heuristic; bypass it when it misses |
 

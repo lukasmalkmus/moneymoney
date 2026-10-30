@@ -1,20 +1,22 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
-# Claude Code plugin shim for `mm`.
+# Plugin shim for `mm`.
 #
 # Resolution order:
 #   1) Any user-installed `mm` already on PATH (cargo / brew / manual)
 #      wins. The shim's own directory is stripped from PATH before the
 #      lookup so we can't re-exec ourselves.
-#   2) A plugin-managed binary at ${CLAUDE_PLUGIN_DATA}/bin/mm whose
-#      recorded version matches .claude-plugin/plugin.json.
+#   2) A plugin-managed binary at ${PLUGIN_DATA}/bin/mm whose recorded
+#      version matches plugin.json (with legacy manifest fallbacks).
 #   3) Download the right release archive from GitHub into
-#      ${CLAUDE_PLUGIN_DATA}/bin, unpack, chmod +x, exec.
+#      ${PLUGIN_DATA}/bin, unpack, chmod +x, exec.
 #
 # On any failure the shim prints a clear install hint to stderr and
 # exits 127, mirroring "command not found" behaviour.
 
 set -euo pipefail
+
+export PATH="${PATH:+$PATH:}/usr/bin:/bin:/usr/sbin:/sbin"
 
 self_dir="$(cd "$(dirname "$0")" && pwd)"
 plugin_root="${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$(cd "$self_dir/.." && pwd)}}"
@@ -29,7 +31,10 @@ fi
 
 # --- 2) Re-use the plugin-managed download if versions match -----------------
 
-plugin_json="$plugin_root/.codex-plugin/plugin.json"
+plugin_json="$plugin_root/plugin.json"
+if [[ ! -f "$plugin_json" ]]; then
+  plugin_json="$plugin_root/.codex-plugin/plugin.json"
+fi
 if [[ ! -f "$plugin_json" ]]; then
   plugin_json="$plugin_root/.claude-plugin/plugin.json"
 fi

@@ -90,4 +90,4 @@ cargo fmt --check
 
 ## Skills
 
-- `skills/mm/SKILL.md` — agent workflow guide (read-only `allowed-tools`)
+- `skills/moneymoney/SKILL.md` — agent workflow guide (read-only `allowed-tools`)

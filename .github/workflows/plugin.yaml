@@ -5,7 +5,14 @@ on:
     branches: [main]
     paths:
       - ".claude-plugin/**"
-      - ".codex-plugin/**"
+      - "plugin.json"
+      - "mcp.json"
+      - "com.openai/**"
+      - "bin/**"
+      - "scripts/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "CHANGELOG.md"
       - ".agents/**"
       - "skills/**"
       - "hooks/**"
@@ -14,7 +21,14 @@ on:
   pull_request:
     paths:
       - ".claude-plugin/**"
-      - ".codex-plugin/**"
+      - "plugin.json"
+      - "mcp.json"
+      - "com.openai/**"
+      - "bin/**"
+      - "scripts/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "CHANGELOG.md"
       - ".agents/**"
       - "skills/**"
       - "hooks/**"
@@ -34,9 +48,26 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - run: npm install -g @anthropic-ai/claude-code
+      - run: npm install -g @anthropic-ai/claude-code@2.1.308
       - run: claude plugin validate . --strict
       - run: claude plugin validate .claude-plugin/plugin.json --strict
+      - uses: astral-sh/setup-uv@v6
+      - run: uv run --python 3.13 --script scripts/validate_plugin.py
+
+  runtime:
+    name: Runtime (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --bin mm
+      - run: python3 scripts/test_plugin.py
+        env:
+          PLUGIN_TEST_BINARY: target/debug/mm
 
   versions:
     name: Versions
@@ -46,7 +77,7 @@ jobs:
       - name: Manifest versions match the crate
         run: |
           crate=$(grep -m1 '^version' Cargo.toml | sed 's/.*"\(.*\)"/\1/')
-          for f in .claude-plugin/plugin.json .codex-plugin/plugin.json; do
+          for f in plugin.json .claude-plugin/plugin.json; do
             got=$(jq -r '.version' "$f")
             [ "$got" = "$crate" ] || { echo "::error file=$f::version $got != crate $crate"; exit 1; }
           done
