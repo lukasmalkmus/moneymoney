@@ -8,7 +8,7 @@ statements through a single Rust binary that works as:
 
 - A standalone command-line tool (`mm accounts list`, `mm transactions --account …`, …)
 - An MCP server over stdio (`mm mcp`) for Claude Desktop and other MCP hosts
-- Claude Code and Codex plugins that vendor both
+- Portable Agent Plugins and native Claude Code integration that bundle both
 
 ## Install
 
@@ -16,6 +16,7 @@ statements through a single Rust binary that works as:
 |---|---|---|
 | Claude Code plugin | `/plugin marketplace add lukasmalkmus/moneymoney`<br>`/plugin install moneymoney@moneymoney` | You use Claude Code and want a one-line setup. The plugin shim auto-downloads the right platform binary on first use. |
 | Codex plugin | `codex plugin marketplace add lukasmalkmus/moneymoney`<br>`codex plugin add moneymoney@moneymoney` | You use Codex and want the skill plus MCP server bundled. |
+| Agent Plugins client | Install this repository using the client's plugin manager. | The client supports Agent Plugins 1.0 and local stdio MCP servers. |
 | Homebrew | `brew install lukasmalkmus/tap/mm` | You want `mm` on your PATH outside Claude Code too. |
 | Cargo | `cargo install moneymoney --locked` | You have a Rust toolchain and prefer `cargo`. |
 | From source | `git clone https://github.com/lukasmalkmus/moneymoney && cargo install --path moneymoney` | You're hacking on `mm`. |
@@ -23,6 +24,10 @@ statements through a single Rust binary that works as:
 Any locally-installed `mm` (via Cargo / Homebrew / elsewhere) takes
 precedence over the plugin-managed download — the plugin shim strips
 its own directory from `PATH` before looking for `mm`.
+
+The portable entry points are root `plugin.json`, `mcp.json`, and `skills/moneymoney/SKILL.md`. Claude Code retains its native manifest, MCP configuration, startup prefetch, and skill reminder. Other clients can run the MCP server without those optional hooks. Plugin hooks may require fresh trust when their definitions change.
+
+The bundled launcher requires macOS, Bash, curl, and tar. It stores downloaded binaries in the host's persistent plugin data directory. MoneyMoney must be running and unlocked for application operations. Existing aliases stay in the normal CLI configuration. Custom settings supplied only through inherited environment variables depend on the host's environment policy.
 
 ### Migration from v0.2 → v0.3
 
@@ -61,11 +66,7 @@ mm transaction add --account "Cash" --date 2026-04-20 \
 mm transaction set 12345 --category "Food\\Groceries"
 ```
 
-Transfers never move money silently: MoneyMoney opens a pre-filled
-payment window (or parks the payment in the outbox with `--into-outbox`)
-and you confirm + enter TAN in the GUI. Write subcommands are
-deliberately omitted from the skill's `allowed-tools` so Claude Code
-prompts for permission each time.
+Transfer commands use MoneyMoney's payment window or outbox, where the user completes the applicable payment authorization. The skill requires confirmation of the action and parameters before writes. Its `allowed-tools` field does not preapprove write subcommands, but actual tool approvals depend on the host's policy and are not guaranteed to prompt on every call.
 
 ## Account References
 
@@ -120,10 +121,7 @@ Read tools (`readOnlyHint: true`): `status`, `list_accounts`,
 `get_portfolio`, `list_statements`, `get_statement`.
 
 Write tools: `create_transfer`, `create_direct_debit`,
-`create_batch_transfer`, `add_transaction` (not destructive — GUI + TAN
-still intercept), and `set_transaction` (marked
-`destructiveHint: true` — it silently overwrites checkmark / category /
-comment).
+`create_batch_transfer`, `add_transaction` (annotated as not destructive), and `set_transaction` (marked `destructiveHint: true` because it overwrites checkmark, category, and comment). These annotations describe tools for the host. They are not server-side confirmation gates.
 
 ## Platform Support
 
@@ -152,6 +150,10 @@ cargo fmt --check
 ```
 
 **MSRV:** 1.94 (edition 2024).
+
+### Plugin releases
+
+Keep Cargo, portable plugin, Claude plugin, and Claude marketplace versions in sync. Prepare and review the release commit on a branch. After release authorization, tag that commit and publish every macOS binary archive before promoting the version-bumped package to marketplace `main`. Only then refresh installed plugins. The launcher downloads the exact declared version, so promoting first would leave cold installations without their binary. Never overwrite a published tag or silently fall back to an older binary.
 
 ## License
 

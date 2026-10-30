@@ -1,8 +1,8 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
-# SessionStart hook: keep ${CLAUDE_PLUGIN_DATA}/bin/mm in sync with the
-# plugin version declared in .claude-plugin/plugin.json. Runs once per
-# Claude Code session and fires-and-forgets so we never block session
+# SessionStart hook: keep the plugin-managed mm in sync with plugin.json,
+# falling back to legacy metadata. Runs once per session and starts in
+# the background so we never block session
 # startup on a flaky network.
 #
 # Any download actually happens via bin/mm's own lazy path, so the
@@ -11,9 +11,14 @@
 
 set -euo pipefail
 
+export PATH="${PATH:+$PATH:}/usr/bin:/bin:/usr/sbin:/sbin"
+
 plugin_root="${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-}}"
 data_dir="${PLUGIN_DATA:-${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/moneymoney}}"
-plugin_json="$plugin_root/.codex-plugin/plugin.json"
+plugin_json="$plugin_root/plugin.json"
+if [[ ! -f "$plugin_json" ]]; then
+  plugin_json="$plugin_root/.codex-plugin/plugin.json"
+fi
 if [[ ! -f "$plugin_json" ]]; then
   plugin_json="$plugin_root/.claude-plugin/plugin.json"
 fi
