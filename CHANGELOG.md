@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix `-F` dropping multi-word and renamed fields from JSON and NDJSON output. Names such as `bookingdate`, `assetclassuuid`, `bic`, and `account` passed validation but selected nothing.
+- Fix the `get_portfolio`, `list_categories`, and `list_statements` MCP tool descriptions, which named keys the tools do not return.
 
 ## [0.7.3] - 2026-10-30
 
