@@ -33,7 +33,7 @@ path, or bare name (rejected with candidate list when ambiguous).
 
 - **Table** (default in TTY), **JSON** (default when piped), **NDJSON**
 - JSON envelope: `{"results": [...], "total_count": N, "showing": N, "has_more": bool}`
-- Field filtering: `-F name,bank,iban`
+- Field filtering: `-F name,bank,iban`. Every accepted name appears in every format. A missing `iban` is `null` with `-F`, absent without it.
 - Structured errors: `{"error": "...", "code": "..."}` on stderr when
   `--json-errors` or stderr is non-TTY.
 

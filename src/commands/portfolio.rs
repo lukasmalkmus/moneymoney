@@ -84,6 +84,12 @@ impl FieldNames for Security {
 
 /// `mm portfolio --account REF` entrypoint.
 pub async fn run<R: OsascriptRunner>(runner: &R, opts: GetOptions) -> anyhow::Result<()> {
+    let filter = opts
+        .fields
+        .as_deref()
+        .map(FieldFilter::parse::<Security>)
+        .transpose()?;
+
     let raw = fetch_all(runner).await?;
     let rows = annotate_with_bank(raw);
     let resolver = Resolver::new(rows, opts.aliases);
@@ -97,10 +103,5 @@ pub async fn run<R: OsascriptRunner>(runner: &R, opts: GetOptions) -> anyhow::Re
 
     let total = envelope.portfolio.len();
     let format = OutputFormat::resolve(opts.format);
-    let filter = opts
-        .fields
-        .as_deref()
-        .map(FieldFilter::parse::<Security>)
-        .transpose()?;
     format_list(&envelope.portfolio, total, format, filter.as_ref())
 }

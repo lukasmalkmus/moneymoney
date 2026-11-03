@@ -120,6 +120,12 @@ fn truncate(s: &str, max: usize) -> String {
 
 /// `mm transactions` entrypoint.
 pub async fn run_list<R: OsascriptRunner>(runner: &R, opts: ListOptions) -> anyhow::Result<()> {
+    let field_filter = opts
+        .fields
+        .as_deref()
+        .map(FieldFilter::parse::<Transaction>)
+        .transpose()?;
+
     // Resolve account first (uses the cached accounts plist).
     let raw = fetch_all(runner).await?;
     let rows = annotate_with_bank(raw);
@@ -157,12 +163,6 @@ pub async fn run_list<R: OsascriptRunner>(runner: &R, opts: ListOptions) -> anyh
     };
 
     let format = OutputFormat::resolve(opts.format);
-    let field_filter = opts
-        .fields
-        .as_deref()
-        .map(FieldFilter::parse::<Transaction>)
-        .transpose()?;
-
     format_list(&truncated, total, format, field_filter.as_ref())
 }
 
