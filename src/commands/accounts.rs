@@ -143,6 +143,10 @@ impl FieldNames for AccountRow {
             "indentation",
         ]
     }
+
+    fn json_aliases() -> &'static [(&'static str, &'static str)] {
+        &[("account", "accountNumber"), ("bic", "bankCode")]
+    }
 }
 
 /// Options controlling `mm accounts list` output and filtering.

@@ -52,12 +52,18 @@ pub trait DetailView {
 /// validate the user's `-F field,field,...` input.
 pub trait FieldNames {
     fn valid_fields() -> &'static [&'static str];
+
+    /// `(field, JSON key)` pairs for fields whose key differs by more than case.
+    fn json_aliases() -> &'static [(&'static str, &'static str)] {
+        &[]
+    }
 }
 
 /// A user-supplied `-F` filter.
 #[derive(Debug, Clone)]
 pub struct FieldFilter {
     fields: Vec<String>,
+    json_keys: Vec<String>,
 }
 
 /// Error returned when `-F` mentions a field not declared by `FieldNames`.
@@ -81,7 +87,16 @@ impl FieldFilter {
                 });
             }
         }
-        Ok(Self { fields })
+        let json_keys = fields
+            .iter()
+            .map(|f| {
+                T::json_aliases()
+                    .iter()
+                    .find(|(field, _)| field == f)
+                    .map_or_else(|| f.clone(), |(_, key)| (*key).to_owned())
+            })
+            .collect();
+        Ok(Self { fields, json_keys })
     }
 
     fn filter_json_value(&self, value: &serde_json::Value) -> serde_json::Value {
@@ -89,7 +104,7 @@ impl FieldFilter {
             serde_json::Value::Object(map) => {
                 let filtered: serde_json::Map<String, serde_json::Value> = map
                     .iter()
-                    .filter(|(k, _)| self.fields.contains(k))
+                    .filter(|(k, _)| self.json_keys.iter().any(|f| f.eq_ignore_ascii_case(k)))
                     .map(|(k, v)| (k.clone(), v.clone()))
                     .collect();
                 serde_json::Value::Object(filtered)
@@ -241,4 +256,109 @@ pub fn print_json_error(error: &anyhow::Error, code: &str) {
         "{}",
         serde_json::to_string(&msg).unwrap_or_default()
     );
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, reason = "tests assert on static JSON fixtures")]
+mod tests {
+    use std::path::PathBuf;
+
+    use serde_json::json;
+
+    use super::*;
+    use crate::commands::accounts::AccountRow;
+    use crate::moneymoney::types::{Category, Security, Transaction};
+    use crate::statements::Statement;
+
+    fn selected_keys<T: FieldNames + Serialize>(item: &T, fields: &str) -> Vec<String> {
+        let filter = FieldFilter::parse::<T>(fields).unwrap();
+        let value = filter.filter_json_value(&serde_json::to_value(item).unwrap());
+        value.as_object().unwrap().keys().cloned().collect()
+    }
+
+    fn assert_every_field_selects_one_key<T: FieldNames + Serialize>(item: &T) {
+        for field in T::valid_fields() {
+            assert_eq!(selected_keys(item, field).len(), 1, "-F {field}");
+        }
+    }
+
+    fn account_row() -> AccountRow {
+        AccountRow {
+            bank: "ING".to_owned(),
+            iban: Some("DE89370400440532013000".to_owned()),
+            account: serde_json::from_value(json!({
+                "uuid": "u",
+                "name": "Giro",
+                "owner": "o",
+                "accountNumber": "n",
+                "bankCode": "b",
+                "currency": "EUR",
+                "group": false,
+                "portfolio": false,
+                "indentation": 1,
+                "type": "t",
+            }))
+            .unwrap(),
+        }
+    }
+
+    fn transaction() -> Transaction {
+        serde_json::from_value(json!({})).unwrap()
+    }
+
+    fn category() -> Category {
+        serde_json::from_value(json!({"name": "Food"})).unwrap()
+    }
+
+    fn security() -> Security {
+        serde_json::from_value(json!({})).unwrap()
+    }
+
+    fn statement() -> Statement {
+        Statement {
+            bank: "ING".to_owned(),
+            filename: "f.pdf".to_owned(),
+            path: PathBuf::from("/f.pdf"),
+            date: None,
+            account_hint: None,
+            size: 0,
+        }
+    }
+
+    #[test]
+    fn every_field_selects_one_json_key() {
+        assert_every_field_selects_one_key(&account_row());
+        assert_every_field_selects_one_key(&transaction());
+        assert_every_field_selects_one_key(&category());
+        assert_every_field_selects_one_key(&security());
+        assert_every_field_selects_one_key(&statement());
+    }
+
+    #[test]
+    fn multi_word_fields_select_camel_case_keys() {
+        assert_eq!(
+            selected_keys(&transaction(), "bookingdate"),
+            ["bookingDate"]
+        );
+        assert_eq!(
+            selected_keys(&security(), "name,assetclassuuid"),
+            ["assetClassUuid", "name"]
+        );
+    }
+
+    #[test]
+    fn aliased_fields_select_their_json_key() {
+        assert_eq!(selected_keys(&account_row(), "account"), ["accountNumber"]);
+        assert_eq!(selected_keys(&account_row(), "bic"), ["bankCode"]);
+        assert_eq!(selected_keys(&transaction(), "account"), ["accountUuid"]);
+        assert_eq!(
+            selected_keys(&transaction(), "counterpartyaccount"),
+            ["accountNumber"]
+        );
+        assert_eq!(
+            selected_keys(&transaction(), "counterpartybankcode"),
+            ["bankCode"]
+        );
+        assert_eq!(selected_keys(&statement(), "account"), ["account_hint"]);
+    }
 }
