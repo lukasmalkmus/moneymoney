@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix `-F` dropping multi-word and renamed fields from JSON and NDJSON output. Names such as `bookingdate`, `assetclassuuid`, `bic`, and `account` passed validation but selected nothing.
+
 ## [0.7.3] - 2026-10-30
 
 ### Added

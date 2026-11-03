@@ -92,6 +92,14 @@ impl FieldNames for Transaction {
             "counterpartybankcode",
         ]
     }
+
+    fn json_aliases() -> &'static [(&'static str, &'static str)] {
+        &[
+            ("account", "accountUuid"),
+            ("counterpartyaccount", "accountNumber"),
+            ("counterpartybankcode", "bankCode"),
+        ]
+    }
 }
 
 fn format_date(d: plist::Date) -> String {

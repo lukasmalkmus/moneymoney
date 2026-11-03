@@ -60,6 +60,10 @@ impl FieldNames for Statement {
     fn valid_fields() -> &'static [&'static str] {
         &["bank", "date", "filename", "path", "account", "size"]
     }
+
+    fn json_aliases() -> &'static [(&'static str, &'static str)] {
+        &[("account", "account_hint")]
+    }
 }
 
 #[allow(
