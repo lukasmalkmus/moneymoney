@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Write `mm accounts get --output ndjson` on one line.
 - Validate `-F` before reading from MoneyMoney or the statements directory.
 
+### Changed
+
+- Refresh dependencies via `cargo update`, including `rmcp` 3.8.0 and `toml` 1.1.8.
+
 ## [0.7.3] - 2026-10-30
 
 ### Added
