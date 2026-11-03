@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-11-03
+
 ### Fixed
 
 - Fix `-F` dropping multi-word and renamed fields from JSON and NDJSON output. Names such as `bookingdate`, `assetclassuuid`, `bic`, and `account` passed validation but selected nothing.
@@ -202,5 +204,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI covering fmt, clippy, MSRV, tests (macOS + Linux),
   audit, and rustdoc.
 
-[Unreleased]: https://github.com/lukasmalkmus/moneymoney/compare/v0.7.3...HEAD
+[Unreleased]: https://github.com/lukasmalkmus/moneymoney/compare/v0.7.4...HEAD
+[0.7.4]: https://github.com/lukasmalkmus/moneymoney/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/lukasmalkmus/moneymoney/compare/v0.7.2...v0.7.3
