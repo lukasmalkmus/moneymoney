@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `mm portfolio` JSON and NDJSON output and the `get_portfolio` MCP tool now
+  include the asset class name (`assetClass`, e.g. "ETFs") next to
+  `assetClassUuid`.
+
 ## [0.7.4] - 2026-11-03
 
 ### Fixed
