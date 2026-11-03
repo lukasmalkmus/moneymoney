@@ -298,7 +298,7 @@ impl Server {
 
     /// Return the full category tree.
     #[tool(
-        description = "List the full MoneyMoney category tree. Returns an array of {uuid, name, group, indentation, budget, currency}. Hierarchy is encoded via indentation and document order.",
+        description = "List the full MoneyMoney category tree. Returns an array of {uuid, name, group, indentation, default, currency}. Hierarchy is encoded via indentation and document order.",
         annotations(read_only_hint = true)
     )]
     async fn list_categories(&self) -> Result<String, rmcp::ErrorData> {
@@ -314,7 +314,7 @@ impl Server {
 
     /// List securities held in a portfolio account.
     #[tool(
-        description = "List securities held in a portfolio / Depot account (`portfolio = true` accounts). Returns {name, isin, wkn, quantity, price, amount, currencyOfQuotation, priceDate, purchasePrice, tradingPlace, ...}.",
+        description = "List securities held in a portfolio / Depot account (`portfolio = true` accounts). Returns {name, isin, securityNumber, quantity, price, amount, currencyOfPrice, tradeTimestamp, purchasePrice, market, ...}.",
         annotations(read_only_hint = true)
     )]
     async fn get_portfolio(
@@ -339,7 +339,7 @@ impl Server {
 
     /// List bank statement PDFs on disk.
     #[tool(
-        description = "List bank statement PDFs from MoneyMoney's on-disk store. Optional 'account' (digit suffix / IBAN) and 'since' (YYYY-MM-DD) filters. Returns {bank, filename, path, date, accountHint, size}. IMPORTANT: filenames alone rarely answer the user's question; pair with get_statement and read the PDF content.",
+        description = "List bank statement PDFs from MoneyMoney's on-disk store. Optional 'account' (digit suffix / IBAN) and 'since' (YYYY-MM-DD) filters. Returns {bank, filename, path, date, account_hint, size}. IMPORTANT: filenames alone rarely answer the user's question; pair with get_statement and read the PDF content.",
         annotations(read_only_hint = true)
     )]
     async fn list_statements(
@@ -585,4 +585,43 @@ pub async fn run(aliases: HashMap<String, String>) -> anyhow::Result<()> {
     let service = server.serve(stdio()).await?;
     service.waiting().await?;
     Ok(())
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, reason = "tests assert on static tool metadata")]
+mod tests {
+    use super::*;
+    use crate::output::tests::{account_row, category, security, statement};
+
+    fn assert_described_keys_exist<T: Serialize>(name: &str, output: &T) {
+        let tools = Server::tool_router().list_all();
+        let tool = tools.iter().find(|t| t.name == name).unwrap();
+        let description = tool.description.as_deref().unwrap();
+        let (_, rest) = description.split_once('{').unwrap();
+        let (keys, _) = rest.split_once('}').unwrap();
+        let value = serde_json::to_value(output).unwrap();
+        for key in keys
+            .split(',')
+            .map(|k| k.split_whitespace().next().unwrap())
+        {
+            assert!(
+                key == "..." || value.get(key).is_some(),
+                "{name}: description names missing key {key}"
+            );
+        }
+    }
+
+    #[test]
+    fn described_keys_exist_in_tool_output() {
+        let report = status::StatusReport {
+            running: true,
+            unlocked: true,
+            version: None,
+        };
+        assert_described_keys_exist("status", &report);
+        assert_described_keys_exist("list_accounts", &account_row());
+        assert_described_keys_exist("list_categories", &category());
+        assert_described_keys_exist("get_portfolio", &security());
+        assert_described_keys_exist("list_statements", &statement());
+    }
 }

@@ -260,7 +260,7 @@ pub fn print_json_error(error: &anyhow::Error, code: &str) {
 
 #[cfg(test)]
 #[allow(clippy::unwrap_used, reason = "tests assert on static JSON fixtures")]
-mod tests {
+pub(crate) mod tests {
     use std::path::PathBuf;
 
     use serde_json::json;
@@ -282,7 +282,7 @@ mod tests {
         }
     }
 
-    fn account_row() -> AccountRow {
+    pub(crate) fn account_row() -> AccountRow {
         AccountRow {
             bank: "ING".to_owned(),
             iban: Some("DE89370400440532013000".to_owned()),
@@ -306,15 +306,15 @@ mod tests {
         serde_json::from_value(json!({})).unwrap()
     }
 
-    fn category() -> Category {
+    pub(crate) fn category() -> Category {
         serde_json::from_value(json!({"name": "Food"})).unwrap()
     }
 
-    fn security() -> Security {
+    pub(crate) fn security() -> Security {
         serde_json::from_value(json!({})).unwrap()
     }
 
-    fn statement() -> Statement {
+    pub(crate) fn statement() -> Statement {
         Statement {
             bank: "ING".to_owned(),
             filename: "f.pdf".to_owned(),
