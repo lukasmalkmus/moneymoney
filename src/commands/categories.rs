@@ -56,13 +56,14 @@ pub struct ListOptions {
 
 /// `mm categories` — emit the full category tree.
 pub async fn run_list<R: OsascriptRunner>(runner: &R, opts: ListOptions) -> anyhow::Result<()> {
-    let cats: Vec<Category> = run_plist(runner, SCRIPT_EXPORT_CATEGORIES).await?;
-    let total = cats.len();
-    let format = OutputFormat::resolve(opts.format);
     let filter = opts
         .fields
         .as_deref()
         .map(FieldFilter::parse::<Category>)
         .transpose()?;
+
+    let cats: Vec<Category> = run_plist(runner, SCRIPT_EXPORT_CATEGORIES).await?;
+    let total = cats.len();
+    let format = OutputFormat::resolve(opts.format);
     format_list(&cats, total, format, filter.as_ref())
 }

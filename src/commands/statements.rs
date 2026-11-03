@@ -84,6 +84,12 @@ fn format_size(bytes: u64) -> String {
 
 /// `mm statements list` entrypoint.
 pub fn run_list(opts: &ListOptions) -> anyhow::Result<()> {
+    let filter = opts
+        .fields
+        .as_deref()
+        .map(FieldFilter::parse::<Statement>)
+        .transpose()?;
+
     let root = statements::default_root();
     let mut items = statements::walk(&root)?;
 
@@ -99,11 +105,6 @@ pub fn run_list(opts: &ListOptions) -> anyhow::Result<()> {
 
     let total = items.len();
     let format = OutputFormat::resolve(opts.format);
-    let filter = opts
-        .fields
-        .as_deref()
-        .map(FieldFilter::parse::<Statement>)
-        .transpose()?;
     format_list(&items, total, format, filter.as_ref())
 }
 

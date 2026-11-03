@@ -159,6 +159,12 @@ pub struct ListOptions {
 
 /// `mm accounts list` — render the account list to stdout.
 pub async fn run_list<R: OsascriptRunner>(runner: &R, opts: ListOptions) -> anyhow::Result<()> {
+    let filter = opts
+        .fields
+        .as_deref()
+        .map(FieldFilter::parse::<AccountRow>)
+        .transpose()?;
+
     let raw = fetch_all(runner).await?;
     let mut rows = annotate_with_bank(raw);
 
@@ -184,12 +190,6 @@ pub async fn run_list<R: OsascriptRunner>(runner: &R, opts: ListOptions) -> anyh
         }
     }
 
-    let filter = opts
-        .fields
-        .as_deref()
-        .map(FieldFilter::parse::<AccountRow>)
-        .transpose()?;
-
     let total = rows.len();
     format_list(&rows, total, format, filter.as_ref())
 }
@@ -204,18 +204,18 @@ pub struct GetOptions {
 
 /// `mm accounts get <REF>` — resolve a reference and render full details.
 pub async fn run_get<R: OsascriptRunner>(runner: &R, opts: GetOptions) -> anyhow::Result<()> {
-    let raw = fetch_all(runner).await?;
-    let rows = annotate_with_bank(raw);
-    let resolver = Resolver::new(rows, opts.aliases);
-    let row = resolver.resolve(&opts.reference)?;
-
-    let format = OutputFormat::resolve(opts.format);
     let filter = opts
         .fields
         .as_deref()
         .map(FieldFilter::parse::<AccountRow>)
         .transpose()?;
 
+    let raw = fetch_all(runner).await?;
+    let rows = annotate_with_bank(raw);
+    let resolver = Resolver::new(rows, opts.aliases);
+    let row = resolver.resolve(&opts.reference)?;
+
+    let format = OutputFormat::resolve(opts.format);
     format_detail(row, format, filter.as_ref())
 }
 

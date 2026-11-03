@@ -193,8 +193,9 @@ mm accounts get "Trade Republic/Girokonto"
 
 Defaults to **table** in terminal, **JSON** when piped (for agents). Override
 with `--output json|ndjson|table`. Use `-F name,iban,balance` to filter
-fields. For SEPA accounts `iban` is the normalized IBAN; for PayPal /
-legacy accounts it's absent.
+fields. Every accepted name appears in every format. For SEPA accounts
+`iban` is the normalized IBAN; for PayPal / legacy accounts it's absent, or
+`null` when requested with `-F`.
 
 ## JSON Envelope
 
